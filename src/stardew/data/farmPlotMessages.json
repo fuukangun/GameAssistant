@@ -1,0 +1,8 @@
+{
+  "unknownFields": {
+    "emptyTileCount": "空地数量未精确解析",
+    "farmableTileCount": "可耕种地块总数未知",
+    "buildingFootprints": "建筑占地未校准"
+  },
+  "emptyCropEvidence": "未解析到已种植作物"
+}

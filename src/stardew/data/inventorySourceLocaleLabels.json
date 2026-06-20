@@ -1,0 +1,15 @@
+{
+  "zh-CN": {
+    "backpack": "背包",
+    "chest": "储物箱",
+    "fridge": "冰箱"
+  },
+  "en-US": {
+    "backpack": "Backpack",
+    "chest": "Chest",
+    "fridge": "Fridge",
+    "背包": "Backpack",
+    "储物箱": "Chest",
+    "冰箱": "Fridge"
+  }
+}

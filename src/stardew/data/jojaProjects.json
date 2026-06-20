@@ -1,0 +1,32 @@
+[
+  {
+    "id": "minecarts",
+    "name": "矿车修复",
+    "price": 15000,
+    "marker": "jojaBoilerRoom"
+  },
+  {
+    "id": "panning",
+    "name": "淘金盘",
+    "price": 20000,
+    "marker": "jojaFishTank"
+  },
+  {
+    "id": "bridge",
+    "name": "桥梁维修",
+    "price": 25000,
+    "marker": "jojaCraftsRoom"
+  },
+  {
+    "id": "greenhouse",
+    "name": "温室修复",
+    "price": 35000,
+    "marker": "jojaPantry"
+  },
+  {
+    "id": "bus",
+    "name": "巴士维修",
+    "price": 40000,
+    "marker": "jojaVault"
+  }
+]

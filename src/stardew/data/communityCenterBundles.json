@@ -1,0 +1,578 @@
+[
+  {
+    "id": "crafts_room",
+    "name": "工艺室",
+    "bundles": [
+      {
+        "id": "spring_foraging",
+        "name": "春季采集收集包",
+        "saveKey": 13,
+        "requirements": [
+          {
+            "itemId": 16,
+            "itemName": "野山葵"
+          },
+          {
+            "itemId": 18,
+            "itemName": "水仙花"
+          },
+          {
+            "itemId": 20,
+            "itemName": "韭葱"
+          },
+          {
+            "itemId": 22,
+            "itemName": "蒲公英"
+          }
+        ]
+      },
+      {
+        "id": "summer_foraging",
+        "name": "夏季采集收集包",
+        "saveKey": 14,
+        "requirements": [
+          {
+            "itemId": 396,
+            "itemName": "香味浆果"
+          },
+          {
+            "itemId": 398,
+            "itemName": "葡萄"
+          },
+          {
+            "itemId": 402,
+            "itemName": "甜豌豆"
+          }
+        ]
+      },
+      {
+        "id": "fall_foraging",
+        "name": "秋季采集收集包",
+        "saveKey": 15,
+        "requirements": [
+          {
+            "itemId": 404,
+            "itemName": "普通蘑菇"
+          },
+          {
+            "itemId": 406,
+            "itemName": "野梅"
+          },
+          {
+            "itemId": 408,
+            "itemName": "榛子"
+          },
+          {
+            "itemId": 410,
+            "itemName": "黑莓"
+          }
+        ]
+      },
+      {
+        "id": "winter_foraging",
+        "name": "冬季采集收集包",
+        "saveKey": 16,
+        "requirements": [
+          {
+            "itemId": 412,
+            "itemName": "冬根"
+          },
+          {
+            "itemId": 414,
+            "itemName": "水晶果"
+          },
+          {
+            "itemId": 416,
+            "itemName": "雪山药"
+          },
+          {
+            "itemId": 418,
+            "itemName": "番红花"
+          }
+        ]
+      },
+      {
+        "id": "construction",
+        "name": "建筑收集包",
+        "saveKey": 17,
+        "requirements": [
+          {
+            "itemId": 388,
+            "itemName": "木材",
+            "requiredStack": 99
+          },
+          {
+            "itemId": 388,
+            "itemName": "木材",
+            "requiredStack": 99
+          },
+          {
+            "itemId": 390,
+            "itemName": "石头",
+            "requiredStack": 99
+          },
+          {
+            "itemId": 709,
+            "itemName": "硬木",
+            "requiredStack": 10
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "pantry",
+    "name": "茶水间",
+    "bundles": [
+      {
+        "id": "spring_crops",
+        "name": "春季作物收集包",
+        "saveKey": 0,
+        "requirements": [
+          {
+            "itemId": 24,
+            "itemName": "防风草"
+          },
+          {
+            "itemId": 188,
+            "itemName": "青豆"
+          },
+          {
+            "itemId": 190,
+            "itemName": "花椰菜"
+          },
+          {
+            "itemId": 192,
+            "itemName": "土豆"
+          }
+        ]
+      },
+      {
+        "id": "summer_crops",
+        "name": "夏季作物收集包",
+        "saveKey": 1,
+        "requirements": [
+          {
+            "itemId": 256,
+            "itemName": "番茄"
+          },
+          {
+            "itemId": 260,
+            "itemName": "辣椒"
+          },
+          {
+            "itemId": 258,
+            "itemName": "蓝莓"
+          },
+          {
+            "itemId": 254,
+            "itemName": "甜瓜"
+          }
+        ]
+      },
+      {
+        "id": "fall_crops",
+        "name": "秋季作物收集包",
+        "saveKey": 2,
+        "requirements": [
+          {
+            "itemId": 270,
+            "itemName": "玉米"
+          },
+          {
+            "itemId": 272,
+            "itemName": "茄子"
+          },
+          {
+            "itemId": 276,
+            "itemName": "南瓜"
+          },
+          {
+            "itemId": 280,
+            "itemName": "山药"
+          }
+        ]
+      },
+      {
+        "id": "animal",
+        "name": "动物制品收集包",
+        "saveKey": 3,
+        "requirements": [
+          {
+            "itemId": 186,
+            "itemName": "大牛奶"
+          },
+          {
+            "itemId": 182,
+            "itemName": "大鸡蛋"
+          },
+          {
+            "itemId": 174,
+            "itemName": "大鸡蛋"
+          },
+          {
+            "itemId": 438,
+            "itemName": "羊毛"
+          },
+          {
+            "itemId": 440,
+            "itemName": "鸭蛋"
+          }
+        ]
+      },
+      {
+        "id": "artisan",
+        "name": "工匠物品收集包",
+        "saveKey": 4,
+        "requirements": [
+          {
+            "itemId": 340,
+            "itemName": "蜂蜜"
+          },
+          {
+            "itemId": 432,
+            "itemName": "松露油"
+          },
+          {
+            "itemId": 424,
+            "itemName": "奶酪"
+          },
+          {
+            "itemId": 426,
+            "itemName": "山羊奶酪"
+          },
+          {
+            "itemId": 348,
+            "itemName": "果酒"
+          },
+          {
+            "itemId": 613,
+            "itemName": "苹果"
+          },
+          {
+            "itemId": 634,
+            "itemName": "杏子"
+          },
+          {
+            "itemId": 638,
+            "itemName": "樱桃"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fish_tank",
+    "name": "鱼缸",
+    "bundles": [
+      {
+        "id": "river_fish",
+        "name": "河鱼收集包",
+        "saveKey": 6,
+        "requirements": [
+          {
+            "itemId": 145,
+            "itemName": "太阳鱼"
+          },
+          {
+            "itemId": 143,
+            "itemName": "鲶鱼"
+          },
+          {
+            "itemId": 706,
+            "itemName": "西鲱"
+          },
+          {
+            "itemId": 699,
+            "itemName": "虎纹鳟鱼"
+          }
+        ]
+      },
+      {
+        "id": "lake_fish",
+        "name": "湖鱼收集包",
+        "saveKey": 7,
+        "requirements": [
+          {
+            "itemId": 136,
+            "itemName": "大嘴鲈鱼"
+          },
+          {
+            "itemId": 142,
+            "itemName": "鲤鱼"
+          },
+          {
+            "itemId": 700,
+            "itemName": "大头鱼"
+          },
+          {
+            "itemId": 698,
+            "itemName": "鲟鱼"
+          }
+        ]
+      },
+      {
+        "id": "ocean_fish",
+        "name": "海鱼收集包",
+        "saveKey": 8,
+        "requirements": [
+          {
+            "itemId": 131,
+            "itemName": "沙丁鱼"
+          },
+          {
+            "itemId": 130,
+            "itemName": "金枪鱼"
+          },
+          {
+            "itemId": 146,
+            "itemName": "红鲻鱼"
+          },
+          {
+            "itemId": 150,
+            "itemName": "红鲷鱼"
+          }
+        ]
+      },
+      {
+        "id": "crab_pot",
+        "name": "蟹笼收集包",
+        "saveKey": 9,
+        "requirements": [
+          {
+            "itemId": 715,
+            "itemName": "龙虾"
+          },
+          {
+            "itemId": 716,
+            "itemName": "小龙虾"
+          },
+          {
+            "itemId": 717,
+            "itemName": "螃蟹"
+          },
+          {
+            "itemId": 718,
+            "itemName": "鸟蛤"
+          },
+          {
+            "itemId": 719,
+            "itemName": "蚌"
+          },
+          {
+            "itemId": 720,
+            "itemName": "虾"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "boiler_room",
+    "name": "锅炉房",
+    "bundles": [
+      {
+        "id": "blacksmith",
+        "name": "铁匠收集包",
+        "saveKey": 20,
+        "requirements": [
+          {
+            "itemId": 334,
+            "itemName": "铜锭"
+          },
+          {
+            "itemId": 335,
+            "itemName": "铁锭"
+          },
+          {
+            "itemId": 336,
+            "itemName": "金锭"
+          }
+        ]
+      },
+      {
+        "id": "geologist",
+        "name": "地质学家收集包",
+        "saveKey": 21,
+        "requirements": [
+          {
+            "itemId": 80,
+            "itemName": "石英"
+          },
+          {
+            "itemId": 86,
+            "itemName": "地晶"
+          },
+          {
+            "itemId": 84,
+            "itemName": "泪晶"
+          },
+          {
+            "itemId": 82,
+            "itemName": "火水晶"
+          }
+        ]
+      },
+      {
+        "id": "adventurer",
+        "name": "冒险家收集包",
+        "saveKey": 22,
+        "requirements": [
+          {
+            "itemId": 766,
+            "itemName": "史莱姆",
+            "requiredStack": 99
+          },
+          {
+            "itemId": 767,
+            "itemName": "蝙蝠翅膀",
+            "requiredStack": 10
+          },
+          {
+            "itemId": 768,
+            "itemName": "太阳精华"
+          },
+          {
+            "itemId": 769,
+            "itemName": "虚空精华"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bulletin_board",
+    "name": "布告栏",
+    "bundles": [
+      {
+        "id": "chef",
+        "name": "厨师收集包",
+        "saveKey": 31,
+        "requirements": [
+          {
+            "itemId": 724,
+            "itemName": "枫糖浆"
+          },
+          {
+            "itemId": 259,
+            "itemName": "蕨菜"
+          },
+          {
+            "itemId": 430,
+            "itemName": "松露"
+          },
+          {
+            "itemId": 376,
+            "itemName": "罂粟"
+          },
+          {
+            "itemId": 228,
+            "itemName": "生鱼寿司"
+          }
+        ]
+      },
+      {
+        "id": "dye",
+        "name": "染料收集包",
+        "saveKey": 32,
+        "requirements": [
+          {
+            "itemId": 420,
+            "itemName": "红蘑菇"
+          },
+          {
+            "itemId": 397,
+            "itemName": "海胆"
+          },
+          {
+            "itemId": 421,
+            "itemName": "向日葵"
+          },
+          {
+            "itemId": 444,
+            "itemName": "鸭毛"
+          },
+          {
+            "itemId": 62,
+            "itemName": "海蓝宝石"
+          }
+        ]
+      },
+      {
+        "id": "field_research",
+        "name": "实地研究收集包",
+        "saveKey": 33,
+        "requirements": [
+          {
+            "itemId": 422,
+            "itemName": "紫蘑菇"
+          },
+          {
+            "itemId": 392,
+            "itemName": "鹦鹉螺"
+          },
+          {
+            "itemId": 702,
+            "itemName": "鲢鱼"
+          },
+          {
+            "itemId": 536,
+            "itemName": "冰封晶球"
+          }
+        ]
+      },
+      {
+        "id": "fodder",
+        "name": "饲料收集包",
+        "saveKey": 34,
+        "requirements": [
+          {
+            "itemId": 262,
+            "itemName": "小麦",
+            "requiredStack": 10
+          },
+          {
+            "itemId": 178,
+            "itemName": "干草",
+            "requiredStack": 10
+          },
+          {
+            "itemId": 613,
+            "itemName": "苹果",
+            "requiredStack": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vault",
+    "name": "金库",
+    "bundles": [
+      {
+        "id": "vault_2500",
+        "name": "2,500金收集包",
+        "saveKey": 23,
+        "requirements": []
+      },
+      {
+        "id": "vault_5000",
+        "name": "5,000金收集包",
+        "saveKey": 24,
+        "requirements": []
+      },
+      {
+        "id": "vault_10000",
+        "name": "10,000金收集包",
+        "saveKey": 25,
+        "requirements": []
+      },
+      {
+        "id": "vault_25000",
+        "name": "25,000金收集包",
+        "saveKey": 26,
+        "requirements": []
+      }
+    ]
+  }
+]

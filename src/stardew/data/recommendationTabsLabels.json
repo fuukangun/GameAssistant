@@ -1,0 +1,22 @@
+{
+  "zh-CN": {
+    "reminders": "重要提醒",
+    "remindersEmpty": "没有需要立即处理的重要提醒。",
+    "actions": "推荐行动",
+    "actionsEmpty": "暂无推荐行动，当前校正项可能已经覆盖主要事项。",
+    "skills": "角色技能",
+    "friendship": "友谊维系",
+    "exploration": "探索进度",
+    "inventory": "拥有物品"
+  },
+  "en-US": {
+    "reminders": "Reminders",
+    "remindersEmpty": "No urgent reminders right now.",
+    "actions": "Recommended Actions",
+    "actionsEmpty": "No recommended actions. Current corrections may already cover the main tasks.",
+    "skills": "Skills",
+    "friendship": "Friendship",
+    "exploration": "Exploration",
+    "inventory": "Owned Items"
+  }
+}

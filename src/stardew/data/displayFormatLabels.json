@@ -1,0 +1,125 @@
+{
+  "seasonLabels": {
+    "zh-CN": {
+      "spring": "春季",
+      "summer": "夏季",
+      "fall": "秋季",
+      "winter": "冬季"
+    },
+    "en-US": {
+      "spring": "Spring",
+      "summer": "Summer",
+      "fall": "Fall",
+      "winter": "Winter"
+    }
+  },
+  "farmTypeLabels": {
+    "zh-CN": {
+      "standard": "标准农场",
+      "riverland": "河边农场",
+      "forest": "森林农场",
+      "hilltop": "山顶农场",
+      "wilderness": "荒野农场",
+      "four_corners": "四角农场",
+      "beach": "海滩农场",
+      "meadowlands": "草原农场"
+    },
+    "en-US": {
+      "standard": "Standard Farm",
+      "riverland": "Riverland Farm",
+      "forest": "Forest Farm",
+      "hilltop": "Hill-top Farm",
+      "wilderness": "Wilderness Farm",
+      "four_corners": "Four Corners Farm",
+      "beach": "Beach Farm",
+      "meadowlands": "Meadowlands Farm"
+    }
+  },
+  "routeLabels": {
+    "zh-CN": {
+      "community_center": "社区中心路线",
+      "joja": "Joja路线",
+      "unknown": "路线未确认"
+    },
+    "en-US": {
+      "community_center": "Community Center Route",
+      "joja": "Joja Route",
+      "unknown": "Unknown Route"
+    }
+  },
+  "priorityLabels": {
+    "zh-CN": {
+      "must_do": "必须处理",
+      "recommended": "推荐",
+      "optional": "可选"
+    },
+    "en-US": {
+      "must_do": "Must Do",
+      "recommended": "Recommended",
+      "optional": "Optional"
+    }
+  },
+  "confidenceLabels": {
+    "zh-CN": {
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "en-US": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  },
+  "npcNameLabels": {
+    "Abigail": "阿比盖尔",
+    "Alex": "亚历克斯",
+    "Caroline": "卡罗琳",
+    "Clint": "克林特",
+    "Demetrius": "德米特里厄斯",
+    "Elliott": "艾利欧特",
+    "Emily": "艾米丽",
+    "Evelyn": "艾芙琳",
+    "George": "乔治",
+    "Gus": "格斯",
+    "Haley": "海莉",
+    "Harvey": "哈维",
+    "Jas": "贾斯",
+    "Jodi": "乔迪",
+    "Kent": "肯特",
+    "Leah": "莉亚",
+    "Lewis": "刘易斯",
+    "Linus": "莱纳斯",
+    "Marnie": "玛妮",
+    "Maru": "玛鲁",
+    "Pam": "潘姆",
+    "Penny": "潘妮",
+    "Pierre": "皮埃尔",
+    "Robin": "罗宾",
+    "Sam": "山姆",
+    "Sandy": "桑迪",
+    "Sebastian": "塞巴斯蒂安",
+    "Shane": "谢恩",
+    "Vincent": "文森特",
+    "Willy": "威利",
+    "Wizard": "法师"
+  },
+  "luckLabels": {
+    "zh-CN": {
+      "veryHappy": "精灵非常开心",
+      "good": "精灵心情不错",
+      "neutral": "精灵保持中立",
+      "mildlyPerturbed": "精灵有点烦躁",
+      "veryDispleased": "精灵非常不悦",
+      "unparsed": "运势未解析"
+    },
+    "en-US": {
+      "veryHappy": "Very happy spirits",
+      "good": "Good humor spirits",
+      "neutral": "Neutral spirits",
+      "mildlyPerturbed": "Mildly perturbed spirits",
+      "veryDispleased": "Very displeased spirits",
+      "unparsed": "Luck unparsed"
+    }
+  }
+}

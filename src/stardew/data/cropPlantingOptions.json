@@ -1,0 +1,262 @@
+[
+  {
+    "id": "parsnip",
+    "name": "防风草",
+    "season": "spring",
+    "daysToMature": 4,
+    "growthDays": 4,
+    "seedPrice": 20,
+    "sellPrice": 35,
+    "seedIds": [
+      472
+    ],
+    "seedName": "防风草种子"
+  },
+  {
+    "id": "potato",
+    "name": "土豆",
+    "season": "spring",
+    "daysToMature": 6,
+    "growthDays": 6,
+    "seedPrice": 50,
+    "sellPrice": 80,
+    "seedIds": [
+      475
+    ],
+    "seedName": "土豆种子",
+    "notes": "基础保守估算不计入额外土豆概率。"
+  },
+  {
+    "id": "cauliflower",
+    "name": "花椰菜",
+    "season": "spring",
+    "daysToMature": 12,
+    "growthDays": 12,
+    "seedPrice": 80,
+    "sellPrice": 175,
+    "seedIds": [
+      474
+    ],
+    "seedName": "花椰菜种子"
+  },
+  {
+    "id": "bean-starter",
+    "name": "青豆",
+    "season": "spring",
+    "daysToMature": 10,
+    "growthDays": 10,
+    "seedPrice": 60,
+    "sellPrice": 40,
+    "seedIds": [
+      473
+    ],
+    "seedName": "青豆种子",
+    "regrowDays": 3
+  },
+  {
+    "id": "kale",
+    "name": "甘蓝",
+    "season": "spring",
+    "daysToMature": 6,
+    "growthDays": 6,
+    "seedPrice": 70,
+    "sellPrice": 110,
+    "seedIds": [
+      477
+    ],
+    "seedName": "甘蓝种子"
+  },
+  {
+    "id": "garlic",
+    "name": "大蒜",
+    "season": "spring",
+    "daysToMature": 4,
+    "growthDays": 4,
+    "seedPrice": 40,
+    "sellPrice": 60,
+    "seedIds": [
+      476
+    ],
+    "seedName": "大蒜种子",
+    "notes": "第2年皮埃尔商店基础作物。"
+  },
+  {
+    "id": "melon",
+    "name": "甜瓜",
+    "season": "summer",
+    "daysToMature": 12,
+    "growthDays": 12,
+    "seedPrice": 80,
+    "sellPrice": 250,
+    "seedIds": [
+      479
+    ],
+    "seedName": "甜瓜种子"
+  },
+  {
+    "id": "blueberry",
+    "name": "蓝莓",
+    "season": "summer",
+    "daysToMature": 13,
+    "growthDays": 13,
+    "seedPrice": 80,
+    "sellPrice": 50,
+    "seedIds": [
+      481
+    ],
+    "seedName": "蓝莓种子",
+    "regrowDays": 4,
+    "notes": "保守估算按每次收获1个普通品质蓝莓，不计入实际多果产量。"
+  },
+  {
+    "id": "tomato",
+    "name": "西红柿",
+    "season": "summer",
+    "daysToMature": 11,
+    "growthDays": 11,
+    "seedPrice": 50,
+    "sellPrice": 60,
+    "seedIds": [
+      480
+    ],
+    "seedName": "西红柿种子",
+    "regrowDays": 4
+  },
+  {
+    "id": "pepper",
+    "name": "辣椒",
+    "season": "summer",
+    "daysToMature": 5,
+    "growthDays": 5,
+    "seedPrice": 40,
+    "sellPrice": 40,
+    "seedIds": [
+      482
+    ],
+    "seedName": "辣椒种子",
+    "regrowDays": 3
+  },
+  {
+    "id": "wheat",
+    "name": "小麦",
+    "season": "summer",
+    "daysToMature": 4,
+    "growthDays": 4,
+    "seedPrice": 10,
+    "sellPrice": 25,
+    "seedIds": [
+      483
+    ],
+    "seedName": "小麦种子",
+    "notes": "可跨夏秋，当前普通成熟判断仍按当季保守处理。"
+  },
+  {
+    "id": "radish",
+    "name": "萝卜",
+    "season": "summer",
+    "daysToMature": 6,
+    "growthDays": 6,
+    "seedPrice": 40,
+    "sellPrice": 90,
+    "seedIds": [
+      484
+    ],
+    "seedName": "萝卜种子"
+  },
+  {
+    "id": "corn",
+    "name": "玉米",
+    "season": "summer",
+    "daysToMature": 14,
+    "growthDays": 14,
+    "seedPrice": 150,
+    "sellPrice": 50,
+    "seedIds": [
+      487
+    ],
+    "seedName": "玉米种子",
+    "regrowDays": 4,
+    "notes": "可跨夏秋，当前单季规则按给定季节保守估算。"
+  },
+  {
+    "id": "pumpkin",
+    "name": "南瓜",
+    "season": "fall",
+    "daysToMature": 13,
+    "growthDays": 13,
+    "seedPrice": 100,
+    "sellPrice": 320,
+    "seedIds": [
+      490
+    ],
+    "seedName": "南瓜种子"
+  },
+  {
+    "id": "cranberries",
+    "name": "蔓越莓",
+    "season": "fall",
+    "daysToMature": 7,
+    "growthDays": 7,
+    "seedPrice": 240,
+    "sellPrice": 75,
+    "seedIds": [
+      493
+    ],
+    "seedName": "蔓越莓种子",
+    "regrowDays": 5,
+    "notes": "保守估算按每次收获1个普通品质蔓越莓，不计入实际多果产量。"
+  },
+  {
+    "id": "eggplant",
+    "name": "茄子",
+    "season": "fall",
+    "daysToMature": 5,
+    "growthDays": 5,
+    "seedPrice": 20,
+    "sellPrice": 60,
+    "seedIds": [
+      488
+    ],
+    "seedName": "茄子种子",
+    "regrowDays": 5
+  },
+  {
+    "id": "yam",
+    "name": "山药",
+    "season": "fall",
+    "daysToMature": 10,
+    "growthDays": 10,
+    "seedPrice": 60,
+    "sellPrice": 160,
+    "seedIds": [
+      492
+    ],
+    "seedName": "山药种子"
+  },
+  {
+    "id": "bok-choy",
+    "name": "小白菜",
+    "season": "fall",
+    "daysToMature": 4,
+    "growthDays": 4,
+    "seedPrice": 50,
+    "sellPrice": 80,
+    "seedIds": [
+      491
+    ],
+    "seedName": "小白菜种子"
+  },
+  {
+    "id": "amaranth",
+    "name": "苋菜",
+    "season": "fall",
+    "daysToMature": 7,
+    "growthDays": 7,
+    "seedPrice": 70,
+    "sellPrice": 150,
+    "seedIds": [
+      299
+    ],
+    "seedName": "苋菜种子"
+  }
+]

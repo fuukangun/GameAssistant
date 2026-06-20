@@ -1,0 +1,73 @@
+{
+  "weather-rainy-no-watering": {
+    "title": "Rain usually waters outdoor crops",
+    "reason": "Today is rainy, so ordinary outdoor crops are usually watered by rain. Save energy for mining, fishing, or farm cleanup.",
+    "uncertainty": [
+      "Greenhouse crops, garden pots, or special tiles may still need manual confirmation."
+    ]
+  },
+  "weather-stormy": {
+    "title": "Check lightning rods on storm days",
+    "reason": "Today is stormy. Lightning rods may produce battery packs, and ordinary outdoor crops usually do not need watering.",
+    "uncertainty": [
+      "Farm lightning rods are not parsed yet, so this is only a weather reminder."
+    ]
+  },
+  "season-end-planting-risk": {
+    "title": "Don't plant season-locked crops near the end of the season",
+    "reason": "In the last 4 days of a season, avoid planting single-season crops that cannot mature before the season changes.",
+    "uncertainty": [
+      "This reminder only uses the plan date; if you have already planted or advanced the day, use the in-game state."
+    ]
+  },
+  "harvest-ready-crops": {
+    "title": "Harvest mature crops",
+    "reason": "The save shows mature crops on the farm. Harvesting them can convert them into gold.",
+    "uncertainty": [
+      "Ignore this suggestion if you have already harvested after entering the game."
+    ]
+  },
+  "collect-ready-processed-goods": {
+    "title": "Collect finished processed goods",
+    "reason": "The save shows finished goods in processing machines. Collect them to free those machines for the next batch.",
+    "uncertainty": [
+      "Ignore this suggestion if you have already collected these after entering the game."
+    ]
+  },
+  "collect-animal-products": {
+    "title": "Collect animal products",
+    "reason": "The save shows animals with products ready to collect. Pick them up and process them when useful.",
+    "uncertainty": [
+      "Milking, shearing, egg collection, and Auto-Grabber state still need in-game confirmation."
+    ]
+  },
+  "animal-feed-low": {
+    "title": "Animal feed is below two days",
+    "reason": "Current hay stock covers less than two days of animal consumption. Prepare hay or check silos to avoid animals stopping production.",
+    "uncertainty": [
+      "Grazing, auto-feeder state, and today's feeding state still need in-game confirmation."
+    ]
+  },
+  "fish-for-money": {
+    "title": "Spend some time fishing for income",
+    "reason": "Fishing is a low-barrier, steady income source. This version estimates a conservative range from fishing level and weather."
+  },
+  "get-fishing-rod": {
+    "title": "Get a fishing rod first",
+    "reason": "The save does not show an owned fishing rod. Before fishing for income, visit Willy at the beach to receive the Bamboo Pole.",
+    "uncertainty": [
+      "If you have already received or bought a rod after entering the game, use the in-game state."
+    ]
+  },
+  "push-mines": {
+    "title": "Push deeper in the Mines",
+    "reason": "Progressing in the Mines unlocks deeper resources and can also provide ore, gems, and combat experience."
+  },
+  "farm-maintenance": {
+    "title": "Tidy the farm and inventory",
+    "reason": "When there are no stronger time-limited tasks, clearing debris, organizing chests, and preparing tools reduces friction for later days.",
+    "uncertainty": [
+      "Farm debris, chest organization, and tool locations are not parsed, so this remains a fallback suggestion."
+    ]
+  }
+}

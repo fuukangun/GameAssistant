@@ -1,0 +1,172 @@
+[
+  {
+    "npc": "Alex",
+    "season": "summer",
+    "day": 13
+  },
+  {
+    "npc": "Elliott",
+    "season": "fall",
+    "day": 5
+  },
+  {
+    "npc": "Harvey",
+    "season": "winter",
+    "day": 14
+  },
+  {
+    "npc": "Sam",
+    "season": "summer",
+    "day": 17
+  },
+  {
+    "npc": "Sebastian",
+    "season": "winter",
+    "day": 10
+  },
+  {
+    "npc": "Shane",
+    "season": "spring",
+    "day": 20
+  },
+  {
+    "npc": "Abigail",
+    "season": "fall",
+    "day": 13
+  },
+  {
+    "npc": "Emily",
+    "season": "spring",
+    "day": 27
+  },
+  {
+    "npc": "Haley",
+    "season": "spring",
+    "day": 14
+  },
+  {
+    "npc": "Leah",
+    "season": "winter",
+    "day": 23
+  },
+  {
+    "npc": "Maru",
+    "season": "summer",
+    "day": 10
+  },
+  {
+    "npc": "Penny",
+    "season": "fall",
+    "day": 2
+  },
+  {
+    "npc": "Caroline",
+    "season": "winter",
+    "day": 7
+  },
+  {
+    "npc": "Clint",
+    "season": "winter",
+    "day": 26
+  },
+  {
+    "npc": "Demetrius",
+    "season": "summer",
+    "day": 19
+  },
+  {
+    "npc": "Dwarf",
+    "season": "summer",
+    "day": 22
+  },
+  {
+    "npc": "Evelyn",
+    "season": "winter",
+    "day": 20
+  },
+  {
+    "npc": "George",
+    "season": "fall",
+    "day": 24
+  },
+  {
+    "npc": "Gus",
+    "season": "summer",
+    "day": 8
+  },
+  {
+    "npc": "Jas",
+    "season": "summer",
+    "day": 4
+  },
+  {
+    "npc": "Jodi",
+    "season": "fall",
+    "day": 11
+  },
+  {
+    "npc": "Kent",
+    "season": "spring",
+    "day": 4
+  },
+  {
+    "npc": "Krobus",
+    "season": "winter",
+    "day": 1
+  },
+  {
+    "npc": "Leo",
+    "season": "summer",
+    "day": 26
+  },
+  {
+    "npc": "Lewis",
+    "season": "spring",
+    "day": 7
+  },
+  {
+    "npc": "Linus",
+    "season": "winter",
+    "day": 3
+  },
+  {
+    "npc": "Marnie",
+    "season": "fall",
+    "day": 18
+  },
+  {
+    "npc": "Pam",
+    "season": "spring",
+    "day": 18
+  },
+  {
+    "npc": "Pierre",
+    "season": "spring",
+    "day": 26
+  },
+  {
+    "npc": "Robin",
+    "season": "fall",
+    "day": 21
+  },
+  {
+    "npc": "Sandy",
+    "season": "fall",
+    "day": 15
+  },
+  {
+    "npc": "Vincent",
+    "season": "spring",
+    "day": 10
+  },
+  {
+    "npc": "Willy",
+    "season": "summer",
+    "day": 24
+  },
+  {
+    "npc": "Wizard",
+    "season": "winter",
+    "day": 17
+  }
+]

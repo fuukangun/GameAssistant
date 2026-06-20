@@ -1,0 +1,130 @@
+{
+  "openStatus": {
+    "zh-CN": "已开放",
+    "en-US": "Open"
+  },
+  "closedOrUnknownStatus": {
+    "zh-CN": "未开放",
+    "en-US": "Closed"
+  },
+  "pendingStatus": {
+    "zh-CN": "待解析",
+    "en-US": "Pending"
+  },
+  "shopFestivalStatus": {
+    "zh-CN": "节日当天，商店营业可能受影响",
+    "en-US": "Festival day; shop hours may be affected"
+  },
+  "shopWednesdayStatus": {
+    "zh-CN": "皮埃尔：周三休息；Joja：通常开放",
+    "en-US": "Pierre: closed on Wednesday; Joja: usually open"
+  },
+  "shopDefaultStatus": {
+    "zh-CN": "皮埃尔：通常开放；Joja：通常开放",
+    "en-US": "Pierre: usually open; Joja: usually open"
+  },
+  "sprinklerFoundStatus": {
+    "zh-CN": "检测到洒水器",
+    "en-US": "Sprinkler detected"
+  },
+  "sprinklerMissingStatus": {
+    "zh-CN": "未检测到洒水器",
+    "en-US": "No sprinkler detected"
+  },
+  "seedPendingStatus": {
+    "zh-CN": "种子待解析；空地未精确解析",
+    "en-US": "Seeds pending; plots not precisely parsed"
+  },
+  "seedNoneStatus": {
+    "zh-CN": "未识别到已支持种子；空地未精确解析",
+    "en-US": "No supported seeds recognized; plots not precisely parsed"
+  },
+  "fishTodayNoneStatus": {
+    "zh-CN": "仅展示已支持鱼类，其他窗口未解析",
+    "en-US": "Only supported fish are shown; other windows are unparsed"
+  },
+  "fishTodayPrefix": {
+    "zh-CN": "已支持鱼种：",
+    "en-US": "Supported fish: "
+  },
+  "fishTodaySuffix": {
+    "zh-CN": "；仅展示前8种已支持鱼类，其他窗口未解析",
+    "en-US": "; only the first 8 supported fish are shown; other windows are unparsed"
+  },
+  "fishingRodLabel": {
+    "zh-CN": "鱼竿",
+    "en-US": "Rod"
+  },
+  "baitLabel": {
+    "zh-CN": "鱼饵",
+    "en-US": "Bait"
+  },
+  "fishingRodPending": {
+    "zh-CN": "鱼竿未解析",
+    "en-US": "Rod unparsed"
+  },
+  "baitPending": {
+    "zh-CN": "鱼饵未解析",
+    "en-US": "Bait unparsed"
+  },
+  "mineUnparsed": {
+    "zh-CN": "未解析",
+    "en-US": "Unparsed"
+  },
+  "mineDepthPrefix": {
+    "zh-CN": "最深 ",
+    "en-US": "Deepest "
+  },
+  "mineDepthSuffix": {
+    "zh-CN": " 层",
+    "en-US": " floor"
+  },
+  "grottoRouteLabel": {
+    "zh-CN": "骷髅洞穴",
+    "en-US": "Skull Cavern"
+  },
+  "volcanoRouteLabel": {
+    "zh-CN": "火山地牢",
+    "en-US": "Volcano Dungeon"
+  },
+  "routeStatusUnconfirmed": {
+    "zh-CN": "路线状态未确认",
+    "en-US": "Route status unconfirmed"
+  },
+  "jojaProgressUnparsed": {
+    "zh-CN": "Joja项目进度未解析",
+    "en-US": "Joja project progress unparsed"
+  },
+  "communityCenterUnparsed": {
+    "zh-CN": "社区中心进度未解析",
+    "en-US": "Community Center progress unparsed"
+  },
+  "communityCenterRestored": {
+    "zh-CN": "社区中心：已修复",
+    "en-US": "Community Center: restored"
+  },
+  "communityCenterProgressPrefix": {
+    "zh-CN": "社区中心：约",
+    "en-US": "Community Center: about "
+  },
+  "communityCenterProgressSuffix": {
+    "zh-CN": "%完成",
+    "en-US": "% complete"
+  },
+  "communityCenterDeliverablePrefix": {
+    "zh-CN": "；库存可交付 ",
+    "en-US": "; "
+  },
+  "communityCenterDeliverableSuffix": {
+    "zh-CN": " 项",
+    "en-US": " deliverable items in inventory"
+  },
+  "jojaPurchasedPrefix": {
+    "zh-CN": "Joja项目：",
+    "en-US": "Joja projects: "
+  },
+  "jojaPurchasedSuffix": {
+    "zh-CN": " 已购买",
+    "en-US": " purchased"
+  }
+}

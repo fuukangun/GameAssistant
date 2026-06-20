@@ -1,0 +1,153 @@
+{
+  "communityCenter": {
+    "title": "Deliver owned items to the Community Center",
+    "reason": "The Community Center still has unfinished bundles, and your inventory contains matching items. Delivering them while nearby advances the route.",
+    "progressPrefix": "About {percentage}% complete",
+    "deliverableLabel": "Deliverable Items",
+    "suffix": " and {count} total items",
+    "uncertainty": "Completed bundles are filtered using save bundle completion flags; exact requirements still use the built-in vanilla bundle catalog."
+  },
+  "seasonEnd": {
+    "title": "Don't plant season-locked crops near the end of the season",
+    "reason": "In the last 4 days of a season, avoid planting single-season crops that cannot mature before the season changes.",
+    "uncertainty": "This reminder only uses the plan date; if you have already planted or advanced the day, use the in-game state."
+  },
+  "festival": {
+    "title": "Festival today: {festival}",
+    "reason": "Today is a festival day, which may affect shops, NPC schedules, and available actions.",
+    "uncertainty": "Festival participation is up to you, and entering the festival area may affect the day schedule."
+  },
+  "birthday": {
+    "giftTitle": "Give {item} to {npc}",
+    "giftReason": "Birthday gifts are much more valuable than normal gifts, and your inventory has the best recognized gift currently available.",
+    "giftUncertainty": "The app cannot confirm whether you have already gifted today in-game.",
+    "birthdayTitle": "{npc}'s birthday today",
+    "birthdayReason": "Birthday gifts are much more valuable than normal gifts, but no supported gift was recognized in your inventory.",
+    "birthdayUncertainty": "The app cannot confirm whether you have already gifted today in-game."
+  },
+  "plant": {
+    "title": "Plant {crop}",
+    "reasonWithDays": "{crop} takes {days} days to mature and can still finish before the season ends if planted today.",
+    "reasonWithoutDays": "{crop} can still mature before the season ends if planted today."
+  },
+  "mine": {
+    "titleWithTarget": "Reach floor {floor} in the Mines",
+    "titleDefault": "Push deeper in the Mines",
+    "reason": "Progressing in the Mines unlocks deeper resources and can also provide ore, gems, and combat experience."
+  },
+  "joja": {
+    "buyTitle": "Buy {project}",
+    "saveTitle": "Save for {project}",
+    "reasonWithGold": "You are {gold}g short of the next Joja project. Prioritize reliable income today.",
+    "reasonEnoughGold": "You have enough gold to buy {project}. Visit the Joja Community Development Form to advance the route.",
+    "uncertainty": "The save currently parses purchased project count; if the actual purchase order differs, check the in-game Joja project list."
+  },
+  "explorationFish": {
+    "namesById": {
+      "pufferfish": "Pufferfish",
+      "anchovy": "Anchovy",
+      "tuna": "Tuna",
+      "sardine": "Sardine",
+      "bream": "Bream",
+      "largemouth-bass": "Largemouth Bass",
+      "smallmouth-bass": "Smallmouth Bass",
+      "rainbow-trout": "Rainbow Trout",
+      "salmon": "Salmon",
+      "walleye": "Walleye",
+      "perch": "Perch",
+      "carp": "Carp",
+      "catfish": "Catfish",
+      "pike": "Pike",
+      "sunfish": "Sunfish",
+      "red-mullet": "Red Mullet",
+      "herring": "Herring",
+      "eel": "Eel",
+      "octopus": "Octopus",
+      "red-snapper": "Red Snapper",
+      "squid": "Squid",
+      "sea-cucumber": "Sea Cucumber",
+      "super-cucumber": "Super Cucumber",
+      "ghostfish": "Ghostfish",
+      "stonefish": "Stonefish",
+      "ice-pip": "Ice Pip",
+      "lava-eel": "Lava Eel",
+      "sandfish": "Sandfish",
+      "scorpion-carp": "Scorpion Carp",
+      "flounder": "Flounder",
+      "midnight-carp": "Midnight Carp",
+      "sturgeon": "Sturgeon",
+      "tiger-trout": "Tiger Trout",
+      "bullhead": "Bullhead",
+      "tilapia": "Tilapia",
+      "chub": "Chub",
+      "dorado": "Dorado",
+      "albacore": "Albacore",
+      "shad": "Shad",
+      "lingcod": "Lingcod",
+      "halibut": "Halibut",
+      "woodskip": "Woodskip",
+      "void-salmon": "Void Salmon",
+      "slimejack": "Slimejack",
+      "stingray": "Stingray",
+      "lionfish": "Lionfish",
+      "blue-discus": "Blue Discus",
+      "crimsonfish": "Crimsonfish",
+      "angler": "Angler",
+      "legend": "Legend",
+      "glacierfish": "Glacierfish",
+      "mutant-carp": "Mutant Carp",
+      "midnight-squid": "Midnight Squid",
+      "spook-fish": "Spook Fish",
+      "blobfish": "Blobfish",
+      "lobster": "Lobster",
+      "crayfish": "Crayfish",
+      "crab": "Crab",
+      "cockle": "Cockle",
+      "mussel": "Mussel",
+      "shrimp": "Shrimp",
+      "snail": "Snail",
+      "periwinkle": "Periwinkle",
+      "oyster": "Oyster",
+      "clam": "Clam"
+    },
+    "locations": {
+      "海洋": "Ocean",
+      "河流": "River",
+      "湖泊": "Lake",
+      "山湖": "Mountain Lake",
+      "森林池塘": "Forest Pond",
+      "矿井": "Mines",
+      "沙漠": "Desert",
+      "下水道": "Sewer",
+      "秘密森林": "Secret Woods",
+      "夜市潜艇": "Night Market Submarine",
+      "蟹笼": "Crab Pot",
+      "姜岛": "Ginger Island"
+    },
+    "timeWindows": {
+      "任意时间": "Any time"
+    }
+  },
+  "explorationStatus": {
+    "parsedCrops": {
+      "zh-CN": "已解析作物 {count} 株；",
+      "en-US": "Parsed crops: {count}; "
+    },
+    "recognizedSeeds": {
+      "zh-CN": "已识别种子：{summary}",
+      "en-US": "Recognized seeds: {summary}"
+    },
+    "plotsUnparsed": {
+      "zh-CN": "空地未精确解析",
+      "en-US": "plots not precisely parsed"
+    },
+    "tilledEmptyPlots": {
+      "zh-CN": "已耕空地 {count} 块",
+      "en-US": "tilled empty plots: {count}"
+    },
+    "mineDepth": {
+      "zh-CN": "最深 {floor} 层",
+      "en-US": "Deepest {floor} floor"
+    }
+  }
+}

@@ -1,0 +1,1059 @@
+[
+  {
+    "id": "pufferfish",
+    "name": "河豚",
+    "category": "regular",
+    "seasons": [
+      "summer"
+    ],
+    "weathers": [
+      "sunny"
+    ],
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "12:00-16:00",
+    "basePrice": 200
+  },
+  {
+    "id": "anchovy",
+    "name": "凤尾鱼",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "fall"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 30
+  },
+  {
+    "id": "tuna",
+    "name": "金枪鱼",
+    "category": "regular",
+    "seasons": [
+      "summer",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 100
+  },
+  {
+    "id": "sardine",
+    "name": "沙丁鱼",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "fall",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 40
+  },
+  {
+    "id": "bream",
+    "name": "鲷鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "河流"
+    ],
+    "timeWindow": "18:00-02:00",
+    "basePrice": 45
+  },
+  {
+    "id": "largemouth-bass",
+    "name": "大嘴鲈鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "山湖"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 100
+  },
+  {
+    "id": "smallmouth-bass",
+    "name": "鲈鱼",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "fall"
+    ],
+    "weathers": "any",
+    "locations": [
+      "河流"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 50
+  },
+  {
+    "id": "rainbow-trout",
+    "name": "虹鳟鱼",
+    "category": "regular",
+    "seasons": [
+      "summer"
+    ],
+    "weathers": [
+      "sunny"
+    ],
+    "locations": [
+      "河流",
+      "山湖"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 65
+  },
+  {
+    "id": "salmon",
+    "name": "鲑鱼",
+    "category": "regular",
+    "seasons": [
+      "fall"
+    ],
+    "weathers": "any",
+    "locations": [
+      "河流"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 75
+  },
+  {
+    "id": "walleye",
+    "name": "大眼鱼",
+    "category": "regular",
+    "seasons": [
+      "fall"
+    ],
+    "weathers": [
+      "rainy",
+      "stormy"
+    ],
+    "locations": [
+      "河流",
+      "湖泊",
+      "森林池塘"
+    ],
+    "timeWindow": "12:00-02:00",
+    "basePrice": 105
+  },
+  {
+    "id": "perch",
+    "name": "河鲈",
+    "category": "regular",
+    "seasons": [
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "河流",
+      "湖泊",
+      "森林池塘"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 55
+  },
+  {
+    "id": "carp",
+    "name": "鲤鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "山湖",
+      "秘密森林",
+      "下水道"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 30
+  },
+  {
+    "id": "catfish",
+    "name": "鲶鱼",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "fall"
+    ],
+    "weathers": [
+      "rainy",
+      "stormy"
+    ],
+    "locations": [
+      "河流",
+      "秘密森林"
+    ],
+    "timeWindow": "06:00-24:00",
+    "basePrice": 200
+  },
+  {
+    "id": "pike",
+    "name": "狗鱼",
+    "category": "regular",
+    "seasons": [
+      "summer",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "河流",
+      "森林池塘"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 100
+  },
+  {
+    "id": "sunfish",
+    "name": "太阳鱼",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "summer"
+    ],
+    "weathers": [
+      "sunny",
+      "windy"
+    ],
+    "locations": [
+      "河流"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 30
+  },
+  {
+    "id": "red-mullet",
+    "name": "红鲻鱼",
+    "category": "regular",
+    "seasons": [
+      "summer",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 75
+  },
+  {
+    "id": "herring",
+    "name": "鲱鱼",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 30
+  },
+  {
+    "id": "eel",
+    "name": "鳗鱼",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "fall"
+    ],
+    "weathers": [
+      "rainy",
+      "stormy"
+    ],
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "16:00-02:00",
+    "basePrice": 85
+  },
+  {
+    "id": "octopus",
+    "name": "章鱼",
+    "category": "regular",
+    "seasons": [
+      "summer"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-13:00",
+    "basePrice": 150
+  },
+  {
+    "id": "red-snapper",
+    "name": "红鲷鱼",
+    "category": "regular",
+    "seasons": [
+      "summer",
+      "fall"
+    ],
+    "weathers": [
+      "rainy",
+      "stormy"
+    ],
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 50
+  },
+  {
+    "id": "squid",
+    "name": "鱿鱼",
+    "category": "regular",
+    "seasons": [
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "18:00-02:00",
+    "basePrice": 80
+  },
+  {
+    "id": "sea-cucumber",
+    "name": "海参",
+    "category": "regular",
+    "seasons": [
+      "fall",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 75
+  },
+  {
+    "id": "super-cucumber",
+    "name": "超级海参",
+    "category": "regular",
+    "seasons": [
+      "summer",
+      "fall"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "18:00-02:00",
+    "basePrice": 250
+  },
+  {
+    "id": "ghostfish",
+    "name": "鬼鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "矿井"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 45
+  },
+  {
+    "id": "stonefish",
+    "name": "石鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "矿井"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 300,
+    "requiredMineLevel": 20
+  },
+  {
+    "id": "ice-pip",
+    "name": "冰柱鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "矿井"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 500,
+    "requiredMineLevel": 60
+  },
+  {
+    "id": "lava-eel",
+    "name": "岩浆鳗鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "矿井"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 700,
+    "requiredMineLevel": 100
+  },
+  {
+    "id": "sandfish",
+    "name": "沙鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "沙漠"
+    ],
+    "timeWindow": "06:00-20:00",
+    "basePrice": 75
+  },
+  {
+    "id": "scorpion-carp",
+    "name": "蝎鲤鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "沙漠"
+    ],
+    "timeWindow": "06:00-20:00",
+    "basePrice": 150
+  },
+  {
+    "id": "flounder",
+    "name": "比目鱼",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "summer"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-20:00",
+    "basePrice": 100
+  },
+  {
+    "id": "midnight-carp",
+    "name": "午夜鲤鱼",
+    "category": "regular",
+    "seasons": [
+      "fall",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "山湖",
+      "森林池塘"
+    ],
+    "timeWindow": "22:00-02:00",
+    "basePrice": 150
+  },
+  {
+    "id": "sturgeon",
+    "name": "鲟鱼",
+    "category": "regular",
+    "seasons": [
+      "summer",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "山湖"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 200
+  },
+  {
+    "id": "tiger-trout",
+    "name": "虎纹鳟鱼",
+    "category": "regular",
+    "seasons": [
+      "fall",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "河流"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 150
+  },
+  {
+    "id": "bullhead",
+    "name": "鲶头鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "山湖"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 75
+  },
+  {
+    "id": "tilapia",
+    "name": "罗非鱼",
+    "category": "regular",
+    "seasons": [
+      "summer",
+      "fall"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-14:00",
+    "basePrice": 75
+  },
+  {
+    "id": "chub",
+    "name": "鲢鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "河流",
+      "山湖"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 50
+  },
+  {
+    "id": "dorado",
+    "name": "金鲤鱼",
+    "category": "regular",
+    "seasons": [
+      "summer"
+    ],
+    "weathers": "any",
+    "locations": [
+      "河流"
+    ],
+    "timeWindow": "06:00-19:00",
+    "basePrice": 100
+  },
+  {
+    "id": "albacore",
+    "name": "长鳍金枪鱼",
+    "category": "regular",
+    "seasons": [
+      "fall",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-11:00 / 18:00-02:00",
+    "basePrice": 75
+  },
+  {
+    "id": "shad",
+    "name": "西鲱",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "summer",
+      "fall"
+    ],
+    "weathers": [
+      "rainy",
+      "stormy"
+    ],
+    "locations": [
+      "河流"
+    ],
+    "timeWindow": "09:00-02:00",
+    "basePrice": 60
+  },
+  {
+    "id": "lingcod",
+    "name": "蛇齿单线鱼",
+    "category": "regular",
+    "seasons": [
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "河流",
+      "山湖"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 120
+  },
+  {
+    "id": "halibut",
+    "name": "大比目鱼",
+    "category": "regular",
+    "seasons": [
+      "spring",
+      "summer",
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "06:00-11:00 / 19:00-02:00",
+    "basePrice": 80
+  },
+  {
+    "id": "woodskip",
+    "name": "木跃鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "秘密森林"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 75
+  },
+  {
+    "id": "goby",
+    "name": "虾虎鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "煤矿森林瀑布"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 150
+  },
+  {
+    "id": "void-salmon",
+    "name": "虚空鲑鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "下水道"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 150
+  },
+  {
+    "id": "slimejack",
+    "name": "史莱姆鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "下水道"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 100
+  },
+  {
+    "id": "stingray",
+    "name": "黄貂鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "姜岛"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 180
+  },
+  {
+    "id": "lionfish",
+    "name": "狮子鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "姜岛"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 100
+  },
+  {
+    "id": "blue-discus",
+    "name": "蓝铁饼鱼",
+    "category": "regular",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "姜岛"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 120
+  },
+  {
+    "id": "crimsonfish",
+    "name": "绯红鱼",
+    "category": "legendary",
+    "seasons": [
+      "summer"
+    ],
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 1500
+  },
+  {
+    "id": "angler",
+    "name": "鮟鱇鱼",
+    "category": "legendary",
+    "seasons": [
+      "fall"
+    ],
+    "weathers": "any",
+    "locations": [
+      "河流"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 900
+  },
+  {
+    "id": "legend",
+    "name": "传说之鱼",
+    "category": "legendary",
+    "seasons": [
+      "spring"
+    ],
+    "weathers": [
+      "rainy",
+      "stormy"
+    ],
+    "locations": [
+      "山湖"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 5000
+  },
+  {
+    "id": "glacierfish",
+    "name": "冰川鱼",
+    "category": "legendary",
+    "seasons": [
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "森林池塘"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 1000
+  },
+  {
+    "id": "mutant-carp",
+    "name": "变种鲤鱼",
+    "category": "legendary",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "下水道"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 1000
+  },
+  {
+    "id": "son-of-crimsonfish",
+    "name": "绯红鱼之子",
+    "category": "legendary",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "海洋"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 1500,
+    "specialOrder": "extendedFamily"
+  },
+  {
+    "id": "ms-angler",
+    "name": "雌鮟鱇鱼",
+    "category": "legendary",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "河流"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 900,
+    "specialOrder": "extendedFamily"
+  },
+  {
+    "id": "legend-ii",
+    "name": "传说之鱼二代",
+    "category": "legendary",
+    "seasons": "all",
+    "weathers": [
+      "rainy",
+      "stormy"
+    ],
+    "locations": [
+      "山湖"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 5000,
+    "specialOrder": "extendedFamily"
+  },
+  {
+    "id": "glacierfish-jr",
+    "name": "冰川鱼二代",
+    "category": "legendary",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "森林池塘"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 1000,
+    "specialOrder": "extendedFamily"
+  },
+  {
+    "id": "radioactive-carp",
+    "name": "放射性鲤鱼",
+    "category": "legendary",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "下水道"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 1000,
+    "specialOrder": "extendedFamily"
+  },
+  {
+    "id": "midnight-squid",
+    "name": "午夜鱿鱼",
+    "category": "night_market",
+    "seasons": [
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "夜市潜艇"
+    ],
+    "timeWindow": "17:00-02:00",
+    "basePrice": 100,
+    "availableDays": [
+      15,
+      16,
+      17
+    ]
+  },
+  {
+    "id": "spook-fish",
+    "name": "幽灵鱼",
+    "category": "night_market",
+    "seasons": [
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "夜市潜艇"
+    ],
+    "timeWindow": "17:00-02:00",
+    "basePrice": 220,
+    "availableDays": [
+      15,
+      16,
+      17
+    ]
+  },
+  {
+    "id": "blobfish",
+    "name": "水滴鱼",
+    "category": "night_market",
+    "seasons": [
+      "winter"
+    ],
+    "weathers": "any",
+    "locations": [
+      "夜市潜艇"
+    ],
+    "timeWindow": "17:00-02:00",
+    "basePrice": 500,
+    "availableDays": [
+      15,
+      16,
+      17
+    ]
+  },
+  {
+    "id": "river-jelly",
+    "name": "河凝胶",
+    "category": "jelly",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "河流",
+      "山湖",
+      "森林池塘",
+      "沙漠",
+      "秘密森林",
+      "姜岛"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 125
+  },
+  {
+    "id": "sea-jelly",
+    "name": "海凝胶",
+    "category": "jelly",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "海洋",
+      "夜市潜艇",
+      "姜岛"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 200
+  },
+  {
+    "id": "cave-jelly",
+    "name": "洞穴凝胶",
+    "category": "jelly",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "矿井"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 180,
+    "requiredMineLevel": 20
+  },
+  {
+    "id": "lobster",
+    "name": "龙虾",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 120
+  },
+  {
+    "id": "crayfish",
+    "name": "小龙虾",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 75
+  },
+  {
+    "id": "crab",
+    "name": "螃蟹",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 100
+  },
+  {
+    "id": "cockle",
+    "name": "鸟蛤",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 50
+  },
+  {
+    "id": "mussel",
+    "name": "蚌",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 30
+  },
+  {
+    "id": "shrimp",
+    "name": "虾",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 60
+  },
+  {
+    "id": "snail",
+    "name": "蜗牛",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 65
+  },
+  {
+    "id": "periwinkle",
+    "name": "玉黍螺",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 20
+  },
+  {
+    "id": "oyster",
+    "name": "牡蛎",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 40
+  },
+  {
+    "id": "clam",
+    "name": "蛤",
+    "category": "crab_pot",
+    "seasons": "all",
+    "weathers": "any",
+    "locations": [
+      "蟹笼"
+    ],
+    "timeWindow": "任意时间",
+    "basePrice": 50
+  }
+]

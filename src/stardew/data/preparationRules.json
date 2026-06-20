@@ -1,0 +1,32 @@
+{
+  "bombs": {
+    "ids": ["286", "287", "288"],
+    "namesByLanguage": {
+      "zh-CN": {
+        "286": "樱桃炸弹",
+        "287": "炸弹",
+        "288": "超级炸弹"
+      },
+      "en-US": {
+        "286": "Cherry Bomb",
+        "287": "Bomb",
+        "288": "Mega Bomb"
+      }
+    }
+  },
+  "staircases": {
+    "ids": ["71"],
+    "namesByLanguage": {
+      "zh-CN": {
+        "71": "楼梯"
+      },
+      "en-US": {
+        "71": "Staircase"
+      }
+    }
+  },
+  "sprinklers": {
+    "ids": ["599", "621", "645"],
+    "names": ["sprinkler", "洒水器"]
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "farmTypes": {
+    "0": "standard",
+    "1": "riverland",
+    "2": "forest",
+    "3": "hilltop",
+    "4": "wilderness",
+    "5": "four_corners",
+    "6": "beach",
+    "MeadowlandsFarm": "meadowlands"
+  },
+  "weatherValues": [
+    "sunny",
+    "rainy",
+    "stormy",
+    "snowy",
+    "windy"
+  ],
+  "jojaProjectMarkers": [
+    "jojaBoilerRoom",
+    "jojaCraftsRoom",
+    "jojaFishTank",
+    "jojaPantry",
+    "jojaVault"
+  ],
+  "accessMarkers": {
+    "desert": [
+      "ccVault",
+      "jojaVault"
+    ],
+    "islandPlayer": [
+      "willyBoatFixed",
+      "Island_UpgradeHouse",
+      "Visited_Island",
+      "islandNorthCaveOpened"
+    ],
+    "islandRoot": [
+      "willyBoatFixed"
+    ],
+    "volcanoPlayer": [
+      "VolcanoDungeon",
+      "volcanoDungeon",
+      "Visited_Island"
+    ],
+    "volcanoLocations": [
+      "VolcanoDungeon"
+    ],
+    "volcanoShortcut": [
+      "volcanoShortcutUnlocked",
+      "Island_Turtle"
+    ]
+  },
+  "multiplayerFields": [
+    "farmhands",
+    "farmhand",
+    "Farmhands",
+    "Farmhand"
+  ],
+  "equipment": {
+    "fishingRod": {
+      "types": [
+        "FishingRod"
+      ],
+      "keywords": [
+        "rod",
+        "鱼竿"
+      ]
+    },
+    "hoe": {
+      "types": [
+        "Hoe"
+      ],
+      "keywords": [
+        "hoe",
+        "锄"
+      ]
+    },
+    "pickaxe": {
+      "types": [
+        "Pickaxe"
+      ],
+      "keywords": [
+        "pickaxe",
+        "镐"
+      ]
+    },
+    "wateringCan": {
+      "types": [
+        "WateringCan"
+      ],
+      "keywords": [
+        "watering can",
+        "喷壶"
+      ]
+    },
+    "trashCan": {
+      "types": [
+        "TrashCan"
+      ],
+      "keywords": [
+        "trash can",
+        "垃圾桶"
+      ]
+    },
+    "weapon": {
+      "types": [
+        "MeleeWeapon",
+        "Slingshot"
+      ],
+      "keywords": [
+        "sword",
+        "dagger",
+        "club",
+        "slingshot",
+        "blade",
+        "剑",
+        "匕首",
+        "棍棒",
+        "弹弓"
+      ]
+    },
+    "axe": {
+      "type": "Axe",
+      "keywords": [
+        "axe",
+        "斧"
+      ],
+      "excludeKeywords": [
+        "pickaxe"
+      ]
+    },
+    "scythe": {
+      "itemIds": [
+        "47",
+        "53"
+      ],
+      "keywords": [
+        "scythe",
+        "镰"
+      ]
+    },
+    "pan": {
+      "type": "Pan",
+      "itemIds": [
+        "CopperPan",
+        "SteelPan",
+        "GoldPan",
+        "IridiumPan"
+      ],
+      "names": [
+        "Copper Pan",
+        "Steel Pan",
+        "Gold Pan",
+        "Iridium Pan",
+        "淘盘"
+      ]
+    },
+    "genericNames": [
+      "axe",
+      "hoe",
+      "pickaxe",
+      "watering can",
+      "fishing rod",
+      "trash can",
+      "pan"
+    ],
+    "displayNames": {
+      "Axe": "Axe",
+      "CopperAxe": "Copper Axe",
+      "SteelAxe": "Steel Axe",
+      "GoldAxe": "Gold Axe",
+      "IridiumAxe": "Iridium Axe",
+      "Pickaxe": "Pickaxe",
+      "CopperPickaxe": "Copper Pickaxe",
+      "SteelPickaxe": "Steel Pickaxe",
+      "GoldPickaxe": "Gold Pickaxe",
+      "IridiumPickaxe": "Iridium Pickaxe",
+      "Hoe": "Hoe",
+      "CopperHoe": "Copper Hoe",
+      "SteelHoe": "Steel Hoe",
+      "GoldHoe": "Gold Hoe",
+      "IridiumHoe": "Iridium Hoe",
+      "WateringCan": "Watering Can",
+      "CopperWateringCan": "Copper Watering Can",
+      "SteelWateringCan": "Steel Watering Can",
+      "GoldWateringCan": "Gold Watering Can",
+      "IridiumWateringCan": "Iridium Watering Can",
+      "TrainingRod": "Training Rod",
+      "BambooPole": "Bamboo Pole",
+      "FiberglassRod": "Fiberglass Rod",
+      "IridiumRod": "Iridium Rod",
+      "AdvancedIridiumRod": "Advanced Iridium Rod",
+      "CopperPan": "Copper Pan",
+      "SteelPan": "Steel Pan",
+      "GoldPan": "Gold Pan",
+      "IridiumPan": "Iridium Pan"
+    },
+    "trashCanLevels": [
+      "Trash Can",
+      "Copper Trash Can",
+      "Steel Trash Can",
+      "Gold Trash Can",
+      "Iridium Trash Can"
+    ],
+    "baitKeywords": [
+      "bait",
+      "鱼饵"
+    ]
+  }
+}

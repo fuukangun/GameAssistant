@@ -20,6 +20,7 @@ import {
   formatRoute,
   sortRelationshipsByFriendship,
 } from './displayFormat.ts';
+import { createInitialAppData } from './appInitialData.ts';
 import { formatDateTime } from './formatDateTime.ts';
 import {
   createExplorationProgressSections,
@@ -46,45 +47,22 @@ import { isTauriRuntime } from './services/tauriEnvironment.ts';
 import { readTauriSaveFile, scanTauriSaves } from './services/tauriSaveScanner.ts';
 import { createSummaryCards } from './summaryCards.ts';
 import { createRouteProgressSummary } from './routeProgress.ts';
-import { demoSnapshot, winterEveSnapshot } from '../stardew/fixtures/demoSnapshot.ts';
 import type { SaveEntry } from '../stardew/saves/scanSaves.ts';
 import { createPlannerStore } from '../stores/plannerStore.ts';
 import { createSaveStore } from '../stores/saveStore.ts';
 import { createSettingsStore } from '../stores/settingsStore.ts';
 
-const demoSaves: Array<{ entry: SaveEntry; snapshot: StardewSaveSnapshot }> = [
-  {
-    entry: {
-      id: 'demo-save',
-      name: demoSnapshot.farm.farmName,
-      path: demoSnapshot.saveIdentity.filePath,
-      lastModified: demoSnapshot.saveIdentity.fileModifiedAt,
-      parseStatus: demoSnapshot.parseMeta.status,
-    },
-    snapshot: demoSnapshot,
-  },
-  {
-    entry: {
-      id: 'winter-eve-demo',
-      name: winterEveSnapshot.farm.farmName,
-      path: winterEveSnapshot.saveIdentity.filePath,
-      lastModified: winterEveSnapshot.saveIdentity.fileModifiedAt,
-      parseStatus: winterEveSnapshot.parseMeta.status,
-    },
-    snapshot: winterEveSnapshot,
-  },
-];
-
+const initialAppData = createInitialAppData(isTauriRuntime());
 const saveStore = createSaveStore();
-const plannerStore = createPlannerStore(demoSnapshot);
+const plannerStore = createPlannerStore(initialAppData.initialSnapshot);
 const localConfigStorage = createBrowserLocalConfigStorage();
 const settingsStore = createSettingsStore(localConfigStorage?.load(), localConfigStorage);
 
-saveStore.getState().setSaves(demoSaves.map((item) => item.entry));
+saveStore.getState().setSaves(initialAppData.saves);
 
 export function App() {
   const [snapshotsBySaveId, setSnapshotsBySaveId] = useState<Record<string, StardewSaveSnapshot>>(() => {
-    return Object.fromEntries(demoSaves.map((item) => [item.entry.id, item.snapshot]));
+    return initialAppData.snapshotsBySaveId;
   });
   const [isDesktopRuntime] = useState(() => isTauriRuntime());
   const [importMessage, setImportMessage] = useState('可手动选择 Stardew Valley 存档 XML 文件。');
@@ -114,6 +92,7 @@ export function App() {
   const language = config.language;
   const routeProgress = createRouteProgressSummary(snapshot, language);
   const sidebarGameGroups = createSidebarGameGroups(saves, language);
+  const hasSelectedSnapshot = Boolean(selectedSaveId && snapshotsBySaveId[selectedSaveId]);
 
   useEffect(() => {
     const selected = selectedSaveId ? snapshotsBySaveId[selectedSaveId] : undefined;
@@ -140,12 +119,16 @@ export function App() {
           saveStore.getState().setSaves(scannedSaves);
           setImportMessage(`已扫描到 ${scannedSaves.length} 个存档。`);
         } else {
-          setImportMessage('默认目录未找到存档，可手动选择主存档文件。');
+          saveStore.getState().setSaves([]);
+          setSnapshotsBySaveId({});
+          setImportMessage('默认目录未找到存档，可手动选择存档文件夹导入。');
         }
       })
       .catch((error) => {
         if (!cancelled) {
-          setImportMessage(error instanceof Error ? error.message : '扫描默认存档目录失败，可手动选择主存档文件。');
+          saveStore.getState().setSaves([]);
+          setSnapshotsBySaveId({});
+          setImportMessage(error instanceof Error ? error.message : '扫描默认存档目录失败，可手动选择存档文件夹导入。');
         }
       })
       .finally(() => {
@@ -359,6 +342,13 @@ export function App() {
       </aside>
 
       <section className="content" id="plan" ref={contentRef} onScroll={handleContentScroll}>
+        {!hasSelectedSnapshot ? (
+          <section className="empty-state" aria-label={t(language, 'empty.noSaveTitle')}>
+            <strong>{t(language, 'empty.noSaveTitle')}</strong>
+            <p>{t(language, 'empty.noSaveBody')}</p>
+          </section>
+        ) : (
+        <>
         <header className="page-header">
           <div>
             <h2>{formatPlanTitle(planDate, language)}</h2>
@@ -470,6 +460,8 @@ export function App() {
             language,
           })}
         />
+        </>
+        )}
         {showBackToTop ? (
           <button
             className="back-to-top-button"

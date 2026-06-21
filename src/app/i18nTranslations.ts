@@ -26,6 +26,8 @@ export type I18nTranslationKey =
   | 'weather.windy'
   | 'notice.parseWarnings'
   | 'notice.afterSleepSave'
+  | 'empty.noSaveTitle'
+  | 'empty.noSaveBody'
   | 'summary.farm'
   | 'summary.money'
   | 'summary.planDate'

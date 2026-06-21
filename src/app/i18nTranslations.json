@@ -140,6 +140,10 @@
     "communityCenterModal.title": "社区中心可交付物品",
     "communityCenterModal.required": "需要",
     "communityCenterModal.owned": "拥有",
+    "producedItemsModal.title": "可收取产物详情",
+    "producedItemsModal.source": "来源",
+    "producedItemsModal.quantity": "数量",
+    "producedItemsModal.unknownSource": "其他来源",
     "navigation.backToTop": "返回顶部"
   },
   "en-US": {
@@ -283,6 +287,10 @@
     "communityCenterModal.title": "Community Center Deliverables",
     "communityCenterModal.required": "Required",
     "communityCenterModal.owned": "Owned",
+    "producedItemsModal.title": "Collectable Goods Details",
+    "producedItemsModal.source": "Source",
+    "producedItemsModal.quantity": "Quantity",
+    "producedItemsModal.unknownSource": "Other Source",
     "navigation.backToTop": "Top"
   }
 }

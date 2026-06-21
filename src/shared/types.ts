@@ -234,6 +234,7 @@ export interface RecommendationItem {
 
 export interface RecommendationDetail {
   communityCenterDeliverables?: CommunityCenterDeliverableDetail[];
+  producedItems?: ProducedItemDetail[];
 }
 
 export interface CommunityCenterDeliverableDetail {
@@ -243,6 +244,13 @@ export interface CommunityCenterDeliverableDetail {
   itemName: string;
   requiredStack: number;
   availableStack: number;
+}
+
+export interface ProducedItemDetail {
+  itemId: number | string;
+  itemName: string;
+  quantity: number;
+  sourceName?: string;
 }
 
 export interface Evidence {

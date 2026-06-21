@@ -911,6 +911,51 @@ body.modal-open .content {
   padding-right: 0;
 }
 
+.produced-item-source-groups {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.produced-item-source-group {
+  display: grid;
+  gap: 8px;
+}
+
+.produced-item-source-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #d9e1d5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f7faf5;
+  color: #20241f;
+  font: inherit;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
+}
+
+.produced-item-source-toggle strong {
+  border-radius: 999px;
+  padding: 2px 9px;
+  background: #dbeadb;
+  color: #335238;
+  font-size: 13px;
+}
+
+.produced-item-source-group .gift-option-list {
+  overflow: visible;
+  padding-right: 0;
+}
+
 .item-icon {
   display: grid;
   place-items: center;

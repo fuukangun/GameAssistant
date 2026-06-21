@@ -25,6 +25,9 @@
   },
   "bundle": {
     "active": true,
+    "publisher": "fuukangun",
+    "homepage": "https://github.com/fuukangun/GameAssistant",
+    "copyright": "Developer: fuukangun\nGitHub: https://github.com/fuukangun/GameAssistant",
     "targets": [
       "dmg",
       "nsis"

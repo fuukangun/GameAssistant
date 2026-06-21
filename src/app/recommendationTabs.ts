@@ -53,10 +53,5 @@ export function createRecommendationTabs(input: {
       label: labels.exploration,
       emptyText: '',
     },
-    {
-      id: 'inventory',
-      label: labels.inventory,
-      emptyText: '',
-    },
   ];
 }

@@ -142,6 +142,10 @@ export type I18nTranslationKey =
   | 'communityCenterModal.title'
   | 'communityCenterModal.required'
   | 'communityCenterModal.owned'
+  | 'producedItemsModal.title'
+  | 'producedItemsModal.source'
+  | 'producedItemsModal.quantity'
+  | 'producedItemsModal.unknownSource'
   | 'navigation.backToTop';
 
 export interface I18nTranslationsData {

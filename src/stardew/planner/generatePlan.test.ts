@@ -119,6 +119,19 @@ test('includes universal gift preferences when choosing the best birthday gift',
   assert.equal(plan.reminders[0]?.evidence.find((item) => item.label === '库存物品')?.value, '五彩碎片 x1（背包）');
 });
 
+test('localizes processed birthday gifts in Chinese plan output', () => {
+  const plan = generatePlan(input({
+    planDate: { year: 6, season: 'winter', day: 14, sourceSaveDate: { year: 6, season: 'winter', day: 14 } },
+    snapshot: baseSnapshot({
+      inventory: [{ id: 342, name: 'Pickles', stack: 4, source: 'chest', sourceLabel: '储物箱' }],
+    }),
+  }));
+
+  assert.equal(plan.reminders[0]?.id, 'birthday-harvey');
+  assert.equal(plan.reminders[0]?.title, '给Harvey送腌菜');
+  assert.equal(plan.reminders[0]?.evidence.find((item) => item.label === '库存物品')?.value, '腌菜 x4（储物箱）');
+});
+
 test('formats fall birthday reminder evidence with the Chinese season label', () => {
   const plan = generatePlan(input({
     planDate: { year: 3, season: 'fall', day: 11, sourceSaveDate: { year: 3, season: 'fall', day: 11 } },
@@ -174,6 +187,35 @@ test('recommends collecting ready processed goods and animal products', () => {
   assert.equal(processed?.evidence.find((item) => item.label === '加工产物')?.value, '果酒 x2（小桶）');
   assert.equal(animalProducts?.category, 'profit');
   assert.equal(animalProducts?.evidence.find((item) => item.label === '动物产物')?.value, '牛奶 x1（奶牛）、鸡蛋 x3（鸡）');
+});
+
+test('summarizes long produced item lists and keeps full detail', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      readyMachineOutputs: [
+        { id: 404, name: 'Common Mushroom', quantity: 1, source: 'machine', sourceName: 'Mushroom Box' },
+        { id: 404, name: 'Common Mushroom', quantity: 1, source: 'machine', sourceName: 'Mushroom Box' },
+        { id: 348, name: 'Wine', quantity: 2, source: 'machine', sourceName: 'Keg' },
+        { id: 348, name: 'Wine', quantity: 1, source: 'machine', sourceName: 'Keg' },
+        { id: 424, name: 'Cheese', quantity: 1, source: 'machine', sourceName: 'Cheese Press' },
+        { id: 432, name: 'Truffle Oil', quantity: 1, source: 'machine', sourceName: 'Oil Maker' },
+      ],
+    }),
+  }));
+
+  const processed = plan.actions.find((item) => item.id === 'collect-ready-processed-goods');
+
+  assert.equal(
+    processed?.evidence.find((item) => item.label === '加工产物')?.value,
+    '普通蘑菇 x2（蘑菇箱）、果酒 x3（小桶）、奶酪 x1（奶酪压制机）等4项',
+  );
+  assert.deepEqual(processed?.detail?.producedItems, [
+    { itemId: 404, itemName: '普通蘑菇', quantity: 2, sourceName: '蘑菇箱' },
+    { itemId: 348, itemName: '果酒', quantity: 3, sourceName: '小桶' },
+    { itemId: 424, itemName: '奶酪', quantity: 1, sourceName: '奶酪压制机' },
+    { itemId: 432, itemName: '松露油', quantity: 1, sourceName: '产油机' },
+  ]);
 });
 
 test('does not recommend processed or animal collection after user marks harvest done', () => {

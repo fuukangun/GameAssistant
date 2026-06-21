@@ -707,20 +707,26 @@ function parseReadyMachineOutputs(root: XmlObject): ProducedItemSummary[] {
       return [];
     }
 
-    const parsed = parseInventoryItem(heldObject, 'chest', '');
-    const item = parsed[0];
-    if (!item) {
-      return [];
-    }
-
     const machineName = textField(object, 'Name') ?? textField(object, 'name');
-    return [{
+    const heldItems = isChestObject(heldObject)
+      ? asArray(objectField(heldObject, 'items')?.Item)
+      : [heldObject];
+
+    return heldItems.flatMap((heldItem) => {
+      const parsed = parseInventoryItem(heldItem, 'chest', '');
+      const item = parsed[0];
+      if (!item) {
+        return [];
+      }
+
+      return [{
       id: item.id,
       name: item.name,
       quantity: item.stack,
       source: 'machine',
       sourceName: machineName,
-    }];
+      }];
+    });
   });
 }
 

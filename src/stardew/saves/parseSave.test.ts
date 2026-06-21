@@ -121,6 +121,54 @@ test('parses ready machine outputs from held objects', () => {
   }]);
 });
 
+test('parses ready machine outputs from held chest containers', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <year>6</year>
+      <currentSeason>winter</currentSeason>
+      <dayOfMonth>14</dayOfMonth>
+      <player><name>Farmer</name><farmName>Vanilla</farmName></player>
+      <locations>
+        <GameLocation>
+          <name>Farm</name>
+          <objects>
+            <item>
+              <value>
+                <Object>
+                  <Name>Auto-Grabber</Name>
+                  <heldObject>
+                    <Object xsi:type="Chest">
+                      <name>Chest</name>
+                      <items>
+                        <Item xsi:type="Object">
+                          <Name>Large Milk</Name>
+                          <ItemId>186</ItemId>
+                          <Stack>6</Stack>
+                        </Item>
+                      </items>
+                    </Object>
+                  </heldObject>
+                </Object>
+              </value>
+            </item>
+          </objects>
+        </GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Vanilla_123456',
+    '2026-06-18T00:00:00.000Z',
+  );
+
+  assert.deepEqual(snapshot.readyMachineOutputs, [{
+    id: '186',
+    name: 'Large Milk',
+    quantity: 6,
+    source: 'machine',
+    sourceName: 'Auto-Grabber',
+  }]);
+});
+
 test('parses animal products and hay days remaining', () => {
   const snapshot = parseStardewSaveXml(
     `<?xml version="1.0" encoding="utf-8"?>

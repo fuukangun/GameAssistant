@@ -1,4 +1,4 @@
-import type { CommunityCenterDeliverableDetail, RecommendationItem } from '../shared/types.ts';
+import type { CommunityCenterDeliverableDetail, ProducedItemDetail, RecommendationItem } from '../shared/types.ts';
 import type { AppLanguage } from './config/localConfig.ts';
 import { formatEquipmentName, formatNpcName } from './displayFormat.ts';
 import { formatItemName } from './itemDisplay.ts';
@@ -41,14 +41,16 @@ function localizeChineseRecommendationItem(item: RecommendationItem): Recommenda
         description: localizeChineseText(localized.estimate.description),
       }
       : undefined,
-    detail: localized.detail?.communityCenterDeliverables
+    detail: localized.detail
       ? {
-        communityCenterDeliverables: localized.detail.communityCenterDeliverables.map((deliverable) => ({
+        ...localized.detail,
+        communityCenterDeliverables: localized.detail.communityCenterDeliverables?.map((deliverable) => ({
           ...deliverable,
           itemName: localizeChineseItemName(deliverable.itemId, deliverable.itemName),
         })),
+        producedItems: localized.detail.producedItems?.map(localizeChineseProducedItemDetail),
       }
-      : localized.detail,
+      : undefined,
   };
 }
 
@@ -130,14 +132,37 @@ function localizeCommunityCenterRecommendation(item: RecommendationItem): Recomm
 
 function localizeKnownRecommendation(item: RecommendationItem): RecommendationItem {
   const known = getDynamicRecommendationText(item) ?? RECOMMENDATION_DISPLAY_DATA[item.id];
+  const localizedDetails = localizeEnglishDetails(item);
   if (!known) {
-    return localizeEvidenceAndEstimate(item);
+    return localizeEvidenceAndEstimate(localizedDetails);
   }
 
   return localizeEvidenceAndEstimate({
-    ...item,
+    ...localizedDetails,
     ...known,
   });
+}
+
+function localizeEnglishDetails(item: RecommendationItem): RecommendationItem {
+  if (!item.detail?.producedItems) {
+    return item;
+  }
+
+  return {
+    ...item,
+    detail: {
+      ...item.detail,
+      producedItems: item.detail.producedItems.map(localizeEnglishProducedItemDetail),
+    },
+  };
+}
+
+function localizeEnglishProducedItemDetail(item: ProducedItemDetail): ProducedItemDetail {
+  return {
+    ...item,
+    itemName: localizeCommunityCenterItemName(item.itemId, item.itemName, 'en-US'),
+    sourceName: item.sourceName ? localizeGeneralItemName(item.sourceName) : undefined,
+  };
 }
 
 function formatCommunityCenterDeliverable(deliverable: CommunityCenterDeliverableDetail): string {
@@ -393,7 +418,7 @@ function localizeEvidenceAndEstimate(item: RecommendationItem): RecommendationIt
 }
 
 function localizeChineseEvidenceValue(label: string, value: string): string {
-  if (label === '库存物品' || label === '已有种子') {
+  if (label === '库存物品' || label === '已有种子' || label === '加工产物' || label === '动物产物') {
     return localizeChineseInventoryValue(value);
   }
   if (label === '成熟作物' || label === '可交付物品') {
@@ -419,10 +444,14 @@ function localizeChineseInventoryValue(value: string): string {
 function localizeChineseItemStackList(value: string): string {
   return value
     .split(/、|,\s*/)
-    .map((entry) => entry.replace(/^(.+?) x(\d+)/, (_match, name: string, stack: string) => {
-      return `${localizeChineseItemNameFromText(name)} x${stack}`;
-    }))
+    .map(localizeChineseItemStackEntry)
     .join(value.includes('、') ? '、' : ', ');
+}
+
+function localizeChineseItemStackEntry(entry: string): string {
+  return entry.replace(/^(.+?) x(\d+)(.*)$/u, (_match, name: string, stack: string, suffix: string) => {
+    return `${localizeChineseItemNameFromText(name)} x${stack}${localizeChineseText(suffix)}`;
+  });
 }
 
 function localizeChineseItemNameFromText(name: string): string {
@@ -437,11 +466,18 @@ function localizeChineseItemNameFromText(name: string): string {
     return localizeChineseText(formatItemName({ id: catalogId, name: cleanName }, 'zh-CN'));
   }
 
-  return localizeChineseText(cleanName);
+  return localizeChineseProcessedItemName(cleanName) ?? localizeChineseText(cleanName);
 }
 
 function localizeChineseItemName(itemId: number | string, fallback: string): string {
-  return formatItemName({ id: itemId, name: fallback }, 'zh-CN');
+  if (/[A-Za-z]/.test(fallback)) {
+    const localizedFromText = localizeChineseItemNameFromText(fallback);
+    if (localizedFromText !== fallback) {
+      return localizedFromText;
+    }
+  }
+
+  return localizeChineseText(formatItemName({ id: itemId, name: fallback }, 'zh-CN'));
 }
 
 function localizeChineseEquipmentValue(value: string): string {
@@ -457,14 +493,65 @@ function localizeChineseWeatherValue(value: string): string {
   return RECOMMENDATION_LOCALIZATION.weatherNames[value] ?? value;
 }
 
+function localizeChineseProducedItemDetail(item: ProducedItemDetail): ProducedItemDetail {
+  return {
+    ...item,
+    itemName: localizeChineseItemName(item.itemId, item.itemName),
+    sourceName: item.sourceName ? localizeChineseText(item.sourceName) : undefined,
+  };
+}
+
 function localizeChineseText(value: string): string {
   let localized = value;
 
-  for (const [en, zh] of Object.entries(RECOMMENDATION_LOCALIZATION.englishTextNames)) {
+  const phraseTranslations = Object.entries(RECOMMENDATION_LOCALIZATION.englishTextNames)
+    .sort(([left], [right]) => right.length - left.length);
+
+  for (const [en, zh] of phraseTranslations) {
     localized = localized.replaceAll(en, zh);
   }
 
   return localized;
+}
+
+function localizeChineseProcessedItemName(name: string): string | undefined {
+  const processedItemNames: Record<string, string> = {
+    Wine: '果酒',
+    Pickles: '腌菜',
+    Jelly: '果酱',
+    Juice: '汁',
+    'Dried Fruit': '果干',
+    'Dried Mushrooms': '蘑菇干',
+    Raisins: '葡萄干',
+    'Aged Roe': '陈年鱼籽',
+  };
+  if (processedItemNames[name]) {
+    return processedItemNames[name];
+  }
+
+  const processedSuffixes: Array<[RegExp, string]> = [
+    [/^Aged (.+) Roe$/u, '陈年{base}鱼籽'],
+    [/^(.+) Roe$/u, '{base}鱼籽'],
+    [/^(.+) Juice$/u, '汁'],
+    [/^(.+) Jelly$/u, '果酱'],
+    [/^(.+) Pickles$/u, '腌菜'],
+    [/^(.+) Wine$/u, '果酒'],
+    [/^(.+) Dried Fruit$/u, '果干'],
+  ];
+
+  for (const [pattern, suffix] of processedSuffixes) {
+    const match = name.match(pattern);
+    if (!match?.[1]) {
+      continue;
+    }
+
+    const baseName = localizeChineseItemNameFromText(match[1]);
+    if (baseName !== match[1]) {
+      return suffix.includes('{base}') ? suffix.replace('{base}', baseName) : `${baseName}${suffix}`;
+    }
+  }
+
+  return undefined;
 }
 
 function localizeEvidenceLabel(label: string): string {

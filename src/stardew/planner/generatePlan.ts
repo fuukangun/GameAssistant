@@ -12,6 +12,7 @@ import { UPGRADE_RULES, type UpgradeRule } from '../data/upgradeRules.ts';
 import { formatItemName } from '../../app/itemDisplay.ts';
 import { createFarmPlotStatusSummary } from '../../app/farmPlotStatus.ts';
 import { formatShopAvailability } from '../../app/explorationStatus.ts';
+import { RECOMMENDATION_LOCALIZATION } from '../data/recommendationLocalization.ts';
 
 export function generatePlan(input: PlannerInput): PlanRecommendation {
   const reminders: RecommendationItem[] = [
@@ -334,6 +335,7 @@ function buildHarvestActions(input: PlannerInput): RecommendationItem[] {
   }
 
   if (input.snapshot.readyMachineOutputs.length > 0) {
+    const producedItems = createProducedItemDetails(input.snapshot.readyMachineOutputs);
     actions.push({
       id: 'collect-ready-processed-goods',
       title: '收取加工产物',
@@ -342,13 +344,17 @@ function buildHarvestActions(input: PlannerInput): RecommendationItem[] {
       confidence: 'medium',
       reason: '存档显示部分加工设备已有成品可收取，及时收取可以释放机器继续加工。',
       evidence: [
-        { source: 'save', label: '加工产物', value: formatProducedItems(input.snapshot.readyMachineOutputs) },
+        { source: 'save', label: '加工产物', value: formatProducedItemsPreview(producedItems) },
       ],
       uncertainty: ['如果你进入游戏后已经收取，请忽略此建议。'],
+      detail: {
+        producedItems,
+      },
     });
   }
 
   if (input.snapshot.animalProducts.length > 0) {
+    const producedItems = createProducedItemDetails(input.snapshot.animalProducts);
     actions.push({
       id: 'collect-animal-products',
       title: '收取动物产物',
@@ -357,47 +363,66 @@ function buildHarvestActions(input: PlannerInput): RecommendationItem[] {
       confidence: 'medium',
       reason: '存档显示动物有可收取产物，建议顺手收取并根据需要加工。',
       evidence: [
-        { source: 'save', label: '动物产物', value: formatProducedItems(input.snapshot.animalProducts) },
+        { source: 'save', label: '动物产物', value: formatProducedItemsPreview(producedItems) },
       ],
       uncertainty: ['是否已经挤奶、剪毛、捡蛋或使用自动采集器仍需按游戏内确认。'],
+      detail: {
+        producedItems,
+      },
     });
   }
 
   return actions;
 }
 
-function formatProducedItems(items: ProducedItemSummary[]): string {
-  return items.map((item) => {
-    const sourceSuffix = item.sourceName ? `（${formatProducedItemSourceName(item.sourceName)}）` : '';
-    return `${formatItemName(item, 'zh-CN')} x${item.quantity}${sourceSuffix}`;
-  }).join('、');
+function createProducedItemDetails(items: ProducedItemSummary[]) {
+  const aggregatedItems: Array<{
+    itemId: number | string;
+    itemName: string;
+    quantity: number;
+    sourceName?: string;
+  }> = [];
+  const indexByItemAndSource = new Map<string, number>();
+
+  for (const item of items) {
+    const sourceName = item.sourceName ? formatProducedItemSourceName(item.sourceName) : undefined;
+    const key = `${sourceName ?? 'unknown'}::${String(item.id ?? item.name)}`;
+    const existingIndex = indexByItemAndSource.get(key);
+    if (existingIndex !== undefined) {
+      const existingItem = aggregatedItems[existingIndex];
+      if (existingItem) {
+        existingItem.quantity += item.quantity;
+      }
+      continue;
+    }
+
+    indexByItemAndSource.set(key, aggregatedItems.length);
+    aggregatedItems.push({
+      itemId: item.id,
+      itemName: formatItemName(item, 'zh-CN'),
+      quantity: item.quantity,
+      sourceName,
+    });
+  }
+
+  return aggregatedItems;
+}
+
+function formatProducedItemsPreview(
+  items: ReturnType<typeof createProducedItemDetails>,
+  limit = 3,
+): string {
+  const preview = items.slice(0, limit).map(formatProducedItemDetail).join('、');
+  return items.length > limit ? `${preview}等${items.length}项` : preview;
+}
+
+function formatProducedItemDetail(item: ReturnType<typeof createProducedItemDetails>[number]): string {
+  const sourceSuffix = item.sourceName ? `（${item.sourceName}）` : '';
+  return `${item.itemName} x${item.quantity}${sourceSuffix}`;
 }
 
 function formatProducedItemSourceName(sourceName: string): string {
-  const labels: Record<string, string> = {
-    Keg: '小桶',
-    PreservesJar: '罐头瓶',
-    'Preserves Jar': '罐头瓶',
-    MayonnaiseMachine: '蛋黄酱机',
-    'Mayonnaise Machine': '蛋黄酱机',
-    CheesePress: '奶酪压制机',
-    'Cheese Press': '奶酪压制机',
-    Loom: '织布机',
-    OilMaker: '产油机',
-    'Oil Maker': '产油机',
-    FishSmoker: '鱼熏制机',
-    'Fish Smoker': '鱼熏制机',
-    Cow: '奶牛',
-    Goat: '山羊',
-    Sheep: '绵羊',
-    Pig: '猪',
-    Chicken: '鸡',
-    Duck: '鸭',
-    Rabbit: '兔子',
-    Dinosaur: '恐龙',
-  };
-
-  return labels[sourceName] ?? sourceName;
+  return RECOMMENDATION_LOCALIZATION.englishTextNames[sourceName] ?? sourceName;
 }
 
 function buildPlantingActions(input: PlannerInput): RecommendationItem[] {

@@ -31,6 +31,7 @@ import { getItemIconPath } from './itemIcons.ts';
 import { formatJojaProjectName } from './jojaProjectDisplay.ts';
 import { createJojaProgress } from './jojaProgress.ts';
 import { formatItemName, formatItemSource } from './itemDisplay.ts';
+import { groupProducedItemsBySource, shouldShowProducedItemDetailButton } from './producedItemActionDetails.ts';
 import {
   localizeCommunityCenterBundleName,
   localizeCommunityCenterItemName,
@@ -103,7 +104,6 @@ export function App() {
   const manualCorrections = useStore(plannerStore, (state) => state.manualCorrections);
   const plan = useStore(plannerStore, (state) => state.plan);
   const setSnapshot = useStore(plannerStore, (state) => state.setSnapshot);
-  const setWeather = useStore(plannerStore, (state) => state.setWeather);
   const setGoal = useStore(plannerStore, (state) => state.setGoal);
   const setManualCorrection = useStore(plannerStore, (state) => state.setManualCorrection);
   const config = useStore(settingsStore, (state) => state.config);
@@ -285,7 +285,6 @@ export function App() {
       <aside className="sidebar">
         <div>
           <h1>{t(language, 'app.title')}</h1>
-          <p>{t(language, 'app.subtitle')}</p>
         </div>
         <section className="sidebar-section game-list" id="saves" aria-label="存档列表">
           {sidebarGameGroups.map((game) => {
@@ -376,26 +375,10 @@ export function App() {
                 <option value="money">{formatGoalLabel('money', language)}</option>
               </select>
             </label>
-            {snapshot.weatherForTomorrow ? (
-              <div className="weather-select status-readout">
-                <span>{t(language, 'header.weather')}</span>
-                <strong>{formatWeatherLabel(selectedWeather, language)}</strong>
-              </div>
-            ) : (
-              <label className="weather-select">
-                <span>{t(language, 'header.weather')}</span>
-                <select
-                  value={selectedWeather}
-                  onChange={(event) => setWeather(event.target.value as Weather)}
-                >
-                  <option value="sunny">{formatWeatherLabel('sunny', language)}</option>
-                  <option value="rainy">{formatWeatherLabel('rainy', language)}</option>
-                  <option value="stormy">{formatWeatherLabel('stormy', language)}</option>
-                  <option value="snowy">{formatWeatherLabel('snowy', language)}</option>
-                  <option value="windy">{formatWeatherLabel('windy', language)}</option>
-                </select>
-              </label>
-            )}
+            <div className="weather-select status-readout">
+              <span>{t(language, 'header.weather')}</span>
+              <strong>{formatWeatherLabel(selectedWeather, language)}</strong>
+            </div>
             <div className="weather-select status-readout">
               <span>{t(language, 'header.luck')}</span>
               <strong>{formatLuck(snapshot.player.dailyLuck, language)}</strong>
@@ -1044,7 +1027,7 @@ function RecommendationList({
               ))}
             </ul>
           ) : null}
-          {shouldShowCommunityCenterDetailButton(item.detail?.communityCenterDeliverables) ? (
+          {shouldShowRecommendationDetailButton(item) ? (
             <button className="detail-button" type="button" onClick={() => setDetailItem(item)}>
               {t(language, 'recommendation.viewDetails')}
             </button>
@@ -1058,8 +1041,20 @@ function RecommendationList({
           onClose={() => setDetailItem(undefined)}
         />
       ) : null}
+      {detailItem?.detail?.producedItems ? (
+        <ProducedItemsModal
+          items={detailItem.detail.producedItems}
+          language={language}
+          onClose={() => setDetailItem(undefined)}
+        />
+      ) : null}
     </div>
   );
+}
+
+function shouldShowRecommendationDetailButton(item: RecommendationItem): boolean {
+  return shouldShowCommunityCenterDetailButton(item.detail?.communityCenterDeliverables)
+    || shouldShowProducedItemDetailButton(item.detail?.producedItems);
 }
 
 function CommunityCenterDeliverablesModal({
@@ -1116,6 +1111,91 @@ function CommunityCenterDeliverablesModal({
                   </article>
                 ))}
               </div>
+            </section>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ProducedItemsModal({
+  items,
+  language,
+  onClose,
+}: {
+  items: NonNullable<RecommendationItem['detail']>['producedItems'];
+  language: AppLanguage;
+  onClose: () => void;
+}) {
+  const groups = groupProducedItemsBySource(items ?? []);
+  const [collapsedSources, setCollapsedSources] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
+
+  function toggleSource(sourceKey: string) {
+    setCollapsedSources((current) => ({
+      ...current,
+      [sourceKey]: !current[sourceKey],
+    }));
+  }
+
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <section
+        aria-modal="true"
+        className="gift-modal produced-items-modal"
+        role="dialog"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="gift-modal-header">
+          <h3>{t(language, 'producedItemsModal.title')}</h3>
+          <button className="modal-close-button" type="button" onClick={onClose}>
+            {t(language, 'giftModal.close')}
+          </button>
+        </header>
+        <div className="produced-item-source-groups">
+          {groups.map((group) => (
+            <section className="produced-item-source-group" key={group.key}>
+              <button
+                aria-expanded={!collapsedSources[group.key]}
+                className="produced-item-source-toggle"
+                type="button"
+                onClick={() => toggleSource(group.key)}
+              >
+                <span>{group.sourceName ?? t(language, 'producedItemsModal.unknownSource')}</span>
+                <strong>{group.items.length}</strong>
+                {collapsedSources[group.key] ? (
+                  <ChevronRight aria-hidden="true" size={16} />
+                ) : (
+                  <ChevronDown aria-hidden="true" size={16} />
+                )}
+              </button>
+              {!collapsedSources[group.key] ? (
+                <div className="gift-option-list">
+                  {group.items.map((item, index) => (
+                    <article className="gift-option-item" key={`${group.key}-${item.itemId}-${index}`}>
+                      <ItemIcon id={item.itemId} name={item.itemName} />
+                      <div>
+                        <h4>{item.itemName}</h4>
+                        <p>
+                          <span>{t(language, 'producedItemsModal.quantity')}：x{item.quantity}</span>
+                          {item.sourceName ? <span>{t(language, 'producedItemsModal.source')}：{item.sourceName}</span> : null}
+                        </p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
             </section>
           ))}
         </div>

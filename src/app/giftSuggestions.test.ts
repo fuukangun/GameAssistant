@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync, statSync } from 'node:fs';
+import { basename, dirname } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { buildGiftOptions, buildGiftSuggestions } from './giftSuggestions.ts';
+import { parseStardewSaveXml } from '../stardew/saves/parseSave.ts';
 
 test('suggests loved gifts from inventory when weekly gift limit is not reached', () => {
   const suggestions = buildGiftSuggestions(
@@ -250,3 +254,42 @@ test('matches English item names for localized preference data', () => {
     { category: '喜欢', label: '石英 x2（储物箱）' },
   ]);
 });
+
+test('does not leak English item names in Chinese gift options from real saves', () => {
+  const saveFiles = findLocalMainSaveFiles();
+  const leaks: Array<{ save: string; npc: string; itemId: string | number; displayName: string }> = [];
+
+  for (const filePath of saveFiles) {
+    const snapshot = parseStardewSaveXml(
+      readFileSync(filePath, 'utf8'),
+      filePath,
+      new Date(statSync(filePath).mtimeMs).toISOString(),
+    );
+
+    for (const relationship of snapshot.relationships) {
+      for (const option of buildGiftOptions(relationship, snapshot.inventory, 'zh-CN')) {
+        if (/[A-Za-z]/.test(option.displayName)) {
+          leaks.push({
+            save: snapshot.farm.farmName,
+            npc: relationship.npc,
+            itemId: option.id,
+            displayName: option.displayName,
+          });
+        }
+      }
+    }
+  }
+
+  assert.deepEqual(leaks, []);
+});
+
+function findLocalMainSaveFiles(): string[] {
+  const roots = [
+    `${process.env.HOME}/.config/StardewValley/Saves`,
+    `${process.env.HOME}/Desktop/saving`,
+  ];
+  return execFileSync('find', [...roots, '-maxdepth', '2', '-type', 'f'], { encoding: 'utf8' })
+    .split('\n')
+    .filter(Boolean)
+    .filter((filePath) => basename(filePath) === basename(dirname(filePath)));
+}

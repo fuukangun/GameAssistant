@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { buildGiftOptions, buildGiftSuggestions } from './giftSuggestions.ts';
@@ -283,12 +283,20 @@ test('does not leak English item names in Chinese gift options from real saves',
   assert.deepEqual(leaks, []);
 });
 
-function findLocalMainSaveFiles(): string[] {
-  const roots = [
+test('skips local real save checks when save directories are unavailable', () => {
+  assert.deepEqual(findLocalMainSaveFiles(['/tmp/game-assistant-missing-saves']), []);
+});
+
+function findLocalMainSaveFiles(roots = [
     `${process.env.HOME}/.config/StardewValley/Saves`,
     `${process.env.HOME}/Desktop/saving`,
-  ];
-  return execFileSync('find', [...roots, '-maxdepth', '2', '-type', 'f'], { encoding: 'utf8' })
+  ]): string[] {
+  const existingRoots = roots.filter((root) => existsSync(root));
+  if (existingRoots.length === 0) {
+    return [];
+  }
+
+  return execFileSync('find', [...existingRoots, '-maxdepth', '2', '-type', 'f'], { encoding: 'utf8' })
     .split('\n')
     .filter(Boolean)
     .filter((filePath) => basename(filePath) === basename(dirname(filePath)));

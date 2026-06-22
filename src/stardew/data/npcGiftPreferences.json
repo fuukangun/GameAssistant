@@ -4,14 +4,12 @@
     "lovedItemIds": [
       201,
       212,
-      288,
       296
     ],
     "lovedItemNames": [
       "Complete Breakfast",
       "Jack Be Nimble, Jack Be Thick",
       "Salmon Dinner",
-      "巨无霸餐",
       "鲑鱼晚餐"
     ],
     "likedItemIds": [
@@ -432,8 +430,7 @@
       90,
       731,
       206,
-      220,
-      288
+      220
     ],
     "lovedItemNames": [
       "Cactus Fruit",
@@ -442,8 +439,7 @@
       "Pizza",
       "披萨",
       "Tigerseye",
-      "巧克力蛋糕",
-      "巨无霸餐"
+      "巧克力蛋糕"
     ],
     "likedItemIds": [
       66,
@@ -2154,8 +2150,7 @@
     "npc": "George",
     "lovedItemIds": [
       205,
-      20,
-      240
+      20
     ],
     "lovedItemNames": [
       "Fried Mushroom",
@@ -3198,7 +3193,7 @@
       "Diamond",
       "钻石",
       "Farmer's Lunch",
-      "炒蘑菇",
+      "农夫午餐",
       "Pink Cake",
       "Pumpkin Pie",
       "巧克力蛋糕"

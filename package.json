@@ -9,6 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
+    "tauri:build:dmg": "tauri build --bundles dmg && ./scripts/add-macos-guide-to-dmg.sh",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test",
     "test:watch": "node --experimental-strip-types --test --watch"

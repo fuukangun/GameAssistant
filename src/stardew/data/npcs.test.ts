@@ -131,6 +131,22 @@ test('uses original Stardew item id 651 for poppyseed muffin gift preferences', 
   assert.deepEqual([...poppyseedMuffinGiftIds], ['651']);
 });
 
+test('keeps known Stardew item ids aligned with gift preference names', () => {
+  assert.equal(getItemNameById(240), '农夫午餐');
+  assert.equal(getItemNameById(288), '超级炸弹');
+
+  const preferences = new Map(NPC_GIFT_PREFERENCES.map((preference) => [preference.npc, preference]));
+
+  assert.equal(preferences.get('Alex')?.lovedItemIds.includes(288), false);
+  assert.equal(preferences.get('Alex')?.lovedItemNames.includes('巨无霸餐'), false);
+  assert.equal(preferences.get('Sam')?.lovedItemIds.includes(288), false);
+  assert.equal(preferences.get('Sam')?.lovedItemNames.includes('巨无霸餐'), false);
+  assert.ok(preferences.get('George')?.lovedItemIds.includes(205));
+  assert.equal(preferences.get('George')?.lovedItemIds.includes(240), false);
+  assert.ok(preferences.get('Marnie')?.lovedItemIds.includes(240));
+  assert.ok(preferences.get('Marnie')?.lovedItemNames.includes("Farmer's Lunch"));
+});
+
 test('includes expanded loved gifts from the Stardew Valley Wiki table', () => {
   const preferences = new Map(NPC_GIFT_PREFERENCES.map((preference) => [preference.npc, preference]));
 

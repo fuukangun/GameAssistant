@@ -6,7 +6,7 @@ import { findAvailableFishForDay } from '../data/fish.ts';
 import { normalizeItemId } from '../data/items.ts';
 import { getNextJojaProject } from '../data/joja.ts';
 import { NPC_GIFT_PREFERENCES, UNIVERSAL_GIFT_PREFERENCES, type NpcGiftPreferences } from '../data/npcs.ts';
-import { isSprinklerItemId, isSprinklerItemName } from '../data/preparationRules.ts';
+import { isBombItemId, isBombItemName, isSprinklerItemId, isSprinklerItemName } from '../data/preparationRules.ts';
 import { PROCESSING_RULES, type ProcessingIngredientKind, type ProcessingRule } from '../data/processingRules.ts';
 import { UPGRADE_RULES, type UpgradeRule } from '../data/upgradeRules.ts';
 import { formatItemName } from '../../app/itemDisplay.ts';
@@ -941,11 +941,19 @@ function isFishIngredient(item: InventoryItem): boolean {
 }
 
 function isKegIngredient(item: InventoryItem): boolean {
+  if (isExcludedProcessingIngredient(item)) {
+    return false;
+  }
+
   const name = formatItemName(item, 'zh-CN');
   return /蓝莓|甜瓜|南瓜|啤酒花|小麦|葡萄|草莓|上古水果|杨桃|苹果|杏子|橙子|桃子|石榴|樱桃/.test(name);
 }
 
 function isPreservesIngredient(item: InventoryItem): boolean {
+  if (isExcludedProcessingIngredient(item)) {
+    return false;
+  }
+
   const name = formatItemName(item, 'zh-CN');
   return isKegIngredient(item) || /番茄|土豆|花椰菜|防风草|玉米|鱼籽|陈年鱼卵/.test(name);
 }
@@ -965,8 +973,19 @@ function isMilkIngredient(item: InventoryItem): boolean {
 }
 
 function isDehydratorIngredient(item: InventoryItem): boolean {
+  if (isExcludedProcessingIngredient(item)) {
+    return false;
+  }
+
   const name = formatItemName(item, 'zh-CN');
   return isKegIngredient(item) || /蘑菇|羊肚菌|鸡油菌|冬根|水晶果|雪山药/.test(name);
+}
+
+function isExcludedProcessingIngredient(item: InventoryItem): boolean {
+  const name = formatItemName(item, 'zh-CN');
+  return isBombItemId(item.id)
+    || isBombItemName(item.name)
+    || /炸弹|机器|设备|鱼熏制机|小桶|罐头瓶|蛋黄酱机|奶酪压制机|织布机|产油机|脱水机/.test(name);
 }
 
 function isBaseToolName(value: string, candidates: string[]): boolean {

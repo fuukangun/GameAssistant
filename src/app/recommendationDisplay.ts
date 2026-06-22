@@ -2,13 +2,16 @@ import type { CommunityCenterDeliverableDetail, ProducedItemDetail, Recommendati
 import type { AppLanguage } from './config/localConfig.ts';
 import { formatEquipmentName, formatNpcName } from './displayFormat.ts';
 import { formatItemName } from './itemDisplay.ts';
-import { getItemIdByName } from '../stardew/data/items.ts';
+import { getItemIdByName, getItemNameById } from '../stardew/data/items.ts';
+import { ITEM_NAME_ALIASES } from '../stardew/data/itemNameAliases.ts';
 import { COMMUNITY_CENTER_TRANSLATIONS } from '../stardew/data/communityCenterTranslations.ts';
 import { formatJojaProjectName } from './jojaProjectDisplay.ts';
 import { JOJA_PROJECT_NAME_TRANSLATIONS } from '../stardew/data/jojaProjectTranslations.ts';
 import { RECOMMENDATION_LOCALIZATION } from '../stardew/data/recommendationLocalization.ts';
 import { RECOMMENDATION_DISPLAY_DATA } from './recommendationDisplayData.ts';
 import { RECOMMENDATION_TEXT_DATA } from './recommendationTextData.ts';
+import { FISH_CATALOG } from '../stardew/data/fish.ts';
+import { PREPARATION_RULES } from '../stardew/data/preparationRules.ts';
 
 export function localizeRecommendationItem(
   item: RecommendationItem,
@@ -197,7 +200,7 @@ function getDynamicRecommendationText(item: RecommendationItem): Partial<Recomme
     if (giftMatch) {
       return {
         title: RECOMMENDATION_TEXT_DATA.birthday.giftTitle
-          .replace('{item}', localizeGeneralItemName(giftMatch[2]))
+          .replace('{item}', localizeItemNameToEnglish(giftMatch[2]))
           .replace('{npc}', giftMatch[1]),
         reason: RECOMMENDATION_TEXT_DATA.birthday.giftReason,
         uncertainty: [RECOMMENDATION_TEXT_DATA.birthday.giftUncertainty],
@@ -406,7 +409,7 @@ function localizeEvidenceAndEstimate(item: RecommendationItem): RecommendationIt
     evidence: item.evidence.map((evidence) => ({
       ...evidence,
       label: localizeEvidenceLabel(evidence.label),
-      value: localizeEvidenceValue(evidence.value),
+      value: localizeEvidenceValue(evidence.value, evidence.label),
     })),
     estimate: item.estimate
       ? {
@@ -558,8 +561,12 @@ function localizeEvidenceLabel(label: string): string {
   return RECOMMENDATION_LOCALIZATION.evidenceLabels[label] ?? label;
 }
 
-function localizeEvidenceValue(value: string): string {
-  let localized = value;
+function localizeEvidenceValue(value: string, label?: string): string {
+  if (label === '可钓鱼类') {
+    return localizeAvailableFishEvidenceValue(value);
+  }
+
+  let localized = localizeEnglishItemStackList(value);
 
   for (const [zh, en] of Object.entries(RECOMMENDATION_LOCALIZATION.statusTexts)) {
     localized = localized.replaceAll(zh, en);
@@ -571,7 +578,6 @@ function localizeEvidenceValue(value: string): string {
     ...RECOMMENDATION_LOCALIZATION.festivalNames,
     ...COMMUNITY_CENTER_TRANSLATIONS.rooms,
     ...COMMUNITY_CENTER_TRANSLATIONS.bundles,
-    ...COMMUNITY_CENTER_TRANSLATIONS.itemsById,
     ...JOJA_PROJECT_NAME_TRANSLATIONS,
   }).sort(([left], [right]) => right.length - left.length);
 
@@ -597,6 +603,61 @@ function localizeEvidenceValue(value: string): string {
   return localized
     .replace(/(\d+)次/g, (_match, count: string) => `${count} ${Number(count) === 1 ? 'harvest' : 'harvests'}`)
     .replace(/(Spring|Summer|Fall|Winter) 第(\d+)日/g, '$1 Day $2')
+    .replaceAll('（', '(')
+    .replaceAll('）', ')');
+}
+
+function localizeAvailableFishEvidenceValue(value: string): string {
+  return value
+    .split('、')
+    .map(localizeAvailableFishEntry)
+    .join(', ');
+}
+
+function localizeAvailableFishEntry(entry: string): string {
+  const match = entry.match(/^(.+?)（(.+?)，(.+?)）$/u);
+  if (!match) {
+    return localizeEvidenceValue(entry);
+  }
+
+  const [, fishName, locations, timeWindow] = match;
+  const localizedFishName = localizeFishName(fishName);
+  const localizedLocations = locations
+    .split('/')
+    .map((location) => RECOMMENDATION_TEXT_DATA.explorationFish.locations[location] ?? location)
+    .join('/');
+  const localizedTimeWindow = RECOMMENDATION_TEXT_DATA.explorationFish.timeWindows[timeWindow] ?? timeWindow;
+
+  return `${localizedFishName} (${localizedLocations}, ${localizedTimeWindow})`;
+}
+
+function localizeFishName(name: string): string {
+  const fish = FISH_CATALOG.find((entry) => entry.name === name);
+  if (fish) {
+    return RECOMMENDATION_TEXT_DATA.explorationFish.namesById[fish.id] ?? name;
+  }
+
+  return localizeKnownChineseItemNamesToEnglish(name);
+}
+
+function localizeEnglishItemStackList(value: string): string {
+  return value
+    .split(/、|,\s*/)
+    .map(localizeEnglishItemStackEntry)
+    .join(value.includes('、') ? ', ' : ', ');
+}
+
+function localizeEnglishItemStackEntry(entry: string): string {
+  return entry.replace(/^(.+?) x(\d+)(.*)$/u, (_match, name: string, stack: string, suffix: string) => {
+    return `${localizeItemNameToEnglish(name) ?? localizeKnownChineseItemNamesToEnglish(name)} x${stack}${localizeEnglishItemStackSuffix(suffix)}`;
+  });
+}
+
+function localizeEnglishItemStackSuffix(suffix: string): string {
+  return localizeKnownChineseItemNamesToEnglish(suffix)
+    .replaceAll('背包', RECOMMENDATION_LOCALIZATION.inventorySources.背包)
+    .replaceAll('储物箱', RECOMMENDATION_LOCALIZATION.inventorySources.储物箱)
+    .replaceAll('冰箱', RECOMMENDATION_LOCALIZATION.inventorySources.冰箱)
     .replaceAll('（', '(')
     .replaceAll('）', ')');
 }
@@ -669,7 +730,7 @@ function localizeCropName(name: string): string {
 }
 
 function localizeGeneralItemName(name: string): string {
-  return RECOMMENDATION_LOCALIZATION.generalItemNames[name] ?? localizeCropName(name);
+  return localizeItemNameToEnglish(name);
 }
 
 function localizeJojaProjectName(name: string): string {
@@ -680,3 +741,103 @@ function localizeMissingField(name: string): string {
   return RECOMMENDATION_LOCALIZATION.missingFieldNames[name] ?? name;
 }
 const englishItemNameToId = RECOMMENDATION_LOCALIZATION.englishItemNameToId;
+
+const chineseItemNameToEnglish = createChineseItemNameToEnglishMap();
+
+function createChineseItemNameToEnglishMap(): Map<string, string> {
+  const entries: Array<[string, string]> = [];
+
+  for (const [englishName, chineseName] of Object.entries(ITEM_NAME_ALIASES)) {
+    entries.push([chineseName, englishName]);
+  }
+
+  for (const [englishName, chineseName] of Object.entries(RECOMMENDATION_LOCALIZATION.englishTextNames)) {
+    if (/[\u4e00-\u9fff]/.test(chineseName)) {
+      entries.push([chineseName, englishName]);
+    }
+  }
+
+  for (const [id, chineseName] of Object.entries(PREPARATION_RULES.bombs.namesByLanguage['zh-CN'])) {
+    const englishName = PREPARATION_RULES.bombs.namesByLanguage['en-US'][id];
+    if (englishName) {
+      entries.push([chineseName, englishName]);
+    }
+  }
+
+  for (const [id, chineseName] of Object.entries(PREPARATION_RULES.staircases.namesByLanguage['zh-CN'])) {
+    const englishName = PREPARATION_RULES.staircases.namesByLanguage['en-US'][id];
+    if (englishName) {
+      entries.push([chineseName, englishName]);
+    }
+  }
+
+  for (const [id, englishName] of Object.entries(COMMUNITY_CENTER_TRANSLATIONS.itemsById)) {
+    const chineseName = getItemNameById(id);
+    if (chineseName && /[\u4e00-\u9fff]/.test(chineseName)) {
+      entries.push([chineseName, englishName]);
+    }
+  }
+
+  for (const [chineseName, englishName] of Object.entries(RECOMMENDATION_LOCALIZATION.generalItemNames)) {
+    entries.push([chineseName, englishName]);
+  }
+
+  for (const [chineseName, englishName] of Object.entries(RECOMMENDATION_LOCALIZATION.cropNames)) {
+    entries.push([chineseName, englishName]);
+  }
+
+  for (const entry of createProcessedItemNameEntries()) {
+    entries.push(entry);
+  }
+
+  return new Map(entries.sort(([left], [right]) => right.length - left.length));
+}
+
+function createProcessedItemNameEntries(): Array<[string, string]> {
+  const entries: Array<[string, string]> = [];
+  const fishNameEntries = FISH_CATALOG.map((fish) => {
+    return [fish.name, RECOMMENDATION_TEXT_DATA.explorationFish.namesById[fish.id]] as [string, string | undefined];
+  }).filter((entry): entry is [string, string] => entry[1] !== undefined);
+
+  for (const [chineseName, englishName] of fishNameEntries) {
+    entries.push([`${chineseName}鱼籽`, `${englishName} Roe`]);
+    entries.push([`陈年${chineseName}鱼籽`, `Aged ${englishName} Roe`]);
+  }
+
+  return entries;
+}
+
+function getEnglishItemNameFromAlias(chineseName: string): string | undefined {
+  return Object.entries(ITEM_NAME_ALIASES)
+    .find(([, alias]) => alias === chineseName)?.[0];
+}
+
+function localizeItemNameToEnglish(name: string): string {
+  const cleanName = name.trim();
+  const id = getItemIdByName(cleanName);
+  if (id !== undefined) {
+    return COMMUNITY_CENTER_TRANSLATIONS.itemsById[String(id)]
+      ?? getEnglishItemNameFromAlias(getItemNameById(id) ?? cleanName)
+      ?? chineseItemNameToEnglish.get(cleanName)
+      ?? RECOMMENDATION_LOCALIZATION.generalItemNames[cleanName]
+      ?? localizeCropName(cleanName)
+      ?? cleanName;
+  }
+
+  return chineseItemNameToEnglish.get(cleanName)
+    ?? RECOMMENDATION_LOCALIZATION.generalItemNames[cleanName]
+    ?? localizeCropName(cleanName);
+}
+
+function localizeKnownChineseItemNamesToEnglish(value: string): string {
+  let localized = value;
+
+  for (const [chineseName, englishName] of chineseItemNameToEnglish) {
+    if (chineseName.length < 2) {
+      continue;
+    }
+    localized = localized.replaceAll(chineseName, englishName);
+  }
+
+  return localized;
+}

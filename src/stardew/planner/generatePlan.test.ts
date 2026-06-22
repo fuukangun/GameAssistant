@@ -684,6 +684,21 @@ test('recommends completing missing processing machines when ingredients are ava
   assert.equal(mayonnaiseMachine?.evidence.find((item) => item.label === '可加工原料')?.value, '鸡蛋 x6（冰箱）');
 });
 
+test('does not treat bombs as keg or dehydrator ingredients', () => {
+  const plan = generatePlan(input({
+    goal: 'free',
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 286, name: '樱桃炸弹', stack: 10, source: 'backpack', sourceLabel: '背包' },
+      ],
+    }),
+  }));
+
+  assert.equal(plan.actions.some((item) => item.id === 'complete-machine-keg'), false);
+  assert.equal(plan.actions.some((item) => item.id === 'complete-machine-dehydrator'), false);
+});
+
 test('recommends backpack and tool upgrades when resources are available', () => {
   const plan = generatePlan(input({
     snapshot: baseSnapshot({

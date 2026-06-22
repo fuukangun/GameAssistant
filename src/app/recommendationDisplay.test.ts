@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { RecommendationItem } from '../shared/types.ts';
+import { RECOMMENDATION_LOCALIZATION } from '../stardew/data/recommendationLocalization.ts';
+import { NPC_GIFT_PREFERENCES, UNIVERSAL_GIFT_PREFERENCES } from '../stardew/data/npcs.ts';
+import { getItemNameById } from '../stardew/data/items.ts';
 import { demoSnapshot } from '../stardew/fixtures/demoSnapshot.ts';
 import { generatePlan } from '../stardew/planner/generatePlan.ts';
 import {
@@ -81,6 +84,129 @@ test('localizes birthday recommendations without claiming the gift is always lov
   assert.equal(localized.reason.includes('loved gift'), false);
   assert.match(localized.reason, /best recognized gift/);
   assert.equal(localized.evidence[0]?.value, 'Fall Day 11');
+});
+
+test('localizes Chinese birthday gift item names to English by item id', () => {
+  const plan = generatePlan({
+    goal: 'free',
+    manualCorrections: { giftedToday: false, harvestedToday: false, wateredToday: false },
+    planDate: { year: 1, season: 'winter', day: 23, sourceSaveDate: { year: 1, season: 'winter', day: 23 } },
+    selectedWeather: 'sunny',
+    snapshot: {
+      ...demoSnapshot,
+      time: { year: 1, season: 'winter', day: 23 },
+      inventory: [
+        { id: 416, name: '雪山药', stack: 7, source: 'backpack', sourceLabel: '背包' },
+      ],
+      crops: [],
+    },
+  });
+
+  const localizedText = plan.reminders
+    .map((item) => localizeRecommendationItem(item, 'en-US'))
+    .map((item) => JSON.stringify({
+      title: item.title,
+      reason: item.reason,
+      evidence: item.evidence,
+      uncertainty: item.uncertainty,
+    }))
+    .join('\n');
+
+  assert.match(localizedText, /Give Snow Yam to Leah/);
+  assert.match(localizedText, /Snow Yam x7\(Backpack\)/);
+  assert.doesNotMatch(localizedText, /[\u4e00-\u9fff]/);
+  assert.doesNotMatch(localizedText, /雪Yam/);
+});
+
+test('localizes birthday gift names that only exist in external text translations', () => {
+  const plan = generatePlan({
+    goal: 'free',
+    manualCorrections: { giftedToday: false, harvestedToday: false, wateredToday: false },
+    planDate: { year: 7, season: 'summer', day: 8, sourceSaveDate: { year: 7, season: 'summer', day: 8 } },
+    selectedWeather: 'sunny',
+    snapshot: {
+      ...demoSnapshot,
+      time: { year: 7, season: 'summer', day: 8 },
+      inventory: [
+        { id: 446, name: '兔脚', stack: 6, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      crops: [],
+    },
+  });
+
+  const localizedText = plan.reminders
+    .map((item) => localizeRecommendationItem(item, 'en-US'))
+    .map((item) => JSON.stringify({
+      title: item.title,
+      reason: item.reason,
+      evidence: item.evidence,
+      uncertainty: item.uncertainty,
+    }))
+    .join('\n');
+
+  assert.match(localizedText, /Give Rabbit's Foot to Gus/);
+  assert.match(localizedText, /Rabbit's Foot x6\(Chest\)/);
+  assert.doesNotMatch(localizedText, /[\u4e00-\u9fff]/);
+});
+
+test('reverse-localizes external English text name mappings in English recommendation output', () => {
+  const untranslated = Object.entries(RECOMMENDATION_LOCALIZATION.englishTextNames)
+    .filter(([, chineseName]) => /[\u4e00-\u9fff]/.test(chineseName))
+    .filter(([englishName, chineseName]) => {
+      const localized = localizeRecommendationItem({
+        id: 'birthday-gus',
+        title: `给Gus送${chineseName}`,
+        category: 'reminder',
+        priority: 'must_do',
+        confidence: 'high',
+        reason: '生日送礼收益显著高于普通送礼，且库存中存在当前可识别的高收益礼物。',
+        evidence: [
+          { source: 'save', label: '库存物品', value: `${chineseName} x1（储物箱）` },
+        ],
+        uncertainty: [],
+      }, 'en-US');
+
+      const text = JSON.stringify(localized);
+      return text.includes(chineseName) || /[\u4e00-\u9fff]/.test(text);
+    });
+
+  assert.deepEqual(untranslated, []);
+});
+
+test('does not leak Chinese catalog names for positive gift preference item ids in English birthday reminders', () => {
+  const positiveGiftIds = new Set<string>();
+  for (const preference of [...NPC_GIFT_PREFERENCES, UNIVERSAL_GIFT_PREFERENCES]) {
+    for (const key of ['lovedItemIds', 'likedItemIds', 'neutralItemIds'] as const) {
+      for (const itemId of preference[key] ?? []) {
+        positiveGiftIds.add(String(itemId).replace(/^\([^)]+\)/, ''));
+      }
+    }
+  }
+
+  const leaked = [...positiveGiftIds]
+    .sort((left, right) => Number(left) - Number(right))
+    .map((itemId) => ({ itemId, name: getItemNameById(itemId) }))
+    .filter((item): item is { itemId: string; name: string } => {
+      return typeof item.name === 'string' && /[\u4e00-\u9fff]/.test(item.name);
+    })
+    .filter(({ name }) => {
+      const localized = localizeRecommendationItem({
+        id: 'birthday-gus',
+        title: `给Gus送${name}`,
+        category: 'reminder',
+        priority: 'must_do',
+        confidence: 'high',
+        reason: '生日送礼收益显著高于普通送礼，且库存中存在当前可识别的高收益礼物。',
+        evidence: [
+          { source: 'save', label: '库存物品', value: `${name} x1（储物箱）` },
+        ],
+        uncertainty: [],
+      }, 'en-US');
+
+      return /[\u4e00-\u9fff]/.test(JSON.stringify(localized));
+    });
+
+  assert.deepEqual(leaked, []);
 });
 
 test('localizes processed birthday gift text to Chinese', () => {
@@ -617,4 +743,78 @@ test('localizes varied generated recommendation scenarios to English without vis
     .join('\n');
 
   assert.doesNotMatch(localizedText, /[\u4e00-\u9fff]/);
+});
+
+test('localizes missing processing machine evidence to English without mixed item names', () => {
+  const plan = generatePlan({
+    goal: 'free',
+    manualCorrections: { giftedToday: false, harvestedToday: false, wateredToday: false },
+    planDate: { year: 1, season: 'winter', day: 23, sourceSaveDate: { year: 1, season: 'winter', day: 23 } },
+    selectedWeather: 'sunny',
+    snapshot: {
+      ...demoSnapshot,
+      time: { year: 1, season: 'winter', day: 23 },
+      inventory: [
+        { id: 812, name: '河鲈鱼籽', stack: 2, source: 'backpack', sourceLabel: '背包' },
+        { id: 286, name: '樱桃炸弹', stack: 10, source: 'backpack', sourceLabel: '背包' },
+      ],
+      crops: [],
+    },
+  });
+
+  const localizedText = plan.actions
+    .filter((item) => item.id.startsWith('complete-machine-'))
+    .map((item) => localizeRecommendationItem(item, 'en-US'))
+    .map((item) => JSON.stringify({
+      title: item.title,
+      reason: item.reason,
+      evidence: item.evidence,
+      uncertainty: item.uncertainty,
+    }))
+    .join('\n');
+
+  assert.match(localizedText, /Get or craft Preserves Jar/);
+  assert.match(localizedText, /Perch Roe x2\(Backpack\)/);
+  assert.doesNotMatch(localizedText, /[\u4e00-\u9fff]/);
+  assert.doesNotMatch(localizedText, /Cherry炸弹|河鲈/);
+});
+
+test('localizes available fish evidence to English without Chinese fish windows', () => {
+  const plan = generatePlan({
+    goal: 'free',
+    manualCorrections: { giftedToday: false, harvestedToday: false, wateredToday: false },
+    planDate: { year: 1, season: 'winter', day: 23, sourceSaveDate: { year: 1, season: 'winter', day: 23 } },
+    selectedWeather: 'sunny',
+    snapshot: {
+      ...demoSnapshot,
+      time: { year: 1, season: 'winter', day: 23 },
+      player: {
+        ...demoSnapshot.player,
+        equipment: {
+          ...demoSnapshot.player.equipment,
+          fishingRodName: 'Iridium Rod',
+        },
+      },
+      farm: {
+        ...demoSnapshot.farm,
+        mineLevel: 85,
+      },
+      inventory: [
+        { id: 812, name: '河鲈鱼籽', stack: 2, source: 'backpack', sourceLabel: '背包' },
+        { id: 416, name: 'Snow Yam', stack: 7, source: 'chest', sourceLabel: '储物箱' },
+        { id: 418, name: 'Crocus', stack: 5, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      crops: [],
+    },
+  });
+
+  const localizedFishing = plan.actions
+    .filter((item) => item.id === 'fish-for-money')
+    .map((item) => localizeRecommendationItem(item, 'en-US'));
+  const text = JSON.stringify(localizedFishing);
+
+  assert.match(text, /Available Fish/);
+  assert.match(text, /Bream \(River, 18:00-02:00\)/);
+  assert.match(text, /Perch \(River\/Lake\/Forest Pond, Any time\)/);
+  assert.doesNotMatch(text, /[\u4e00-\u9fff]/);
 });

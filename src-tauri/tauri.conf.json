@@ -28,6 +28,9 @@
     "publisher": "fuukangun",
     "homepage": "https://github.com/fuukangun/GameAssistant",
     "copyright": "Developer: fuukangun\nGitHub: https://github.com/fuukangun/GameAssistant",
+    "resources": {
+      "resources/Mac应用提示已损坏解决方案.md": "Mac应用提示已损坏解决方案.md"
+    },
     "targets": [
       "dmg",
       "nsis"

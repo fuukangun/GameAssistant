@@ -1,4 +1,4 @@
-import { type UIEvent, useEffect, useRef, useState } from 'react';
+import { type UIEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp, ChevronDown, ChevronRight } from 'lucide-react';
 import { useStore } from 'zustand';
 import type { PlannerGoal, RecommendationItem, StardewSaveSnapshot, Weather } from '../shared/types.ts';
@@ -18,14 +18,14 @@ import {
   formatNpcName,
   formatPriority,
   formatRoute,
-  sortRelationshipsByFriendship,
 } from './displayFormat.ts';
 import { createInitialAppData } from './appInitialData.ts';
 import { formatDateTime } from './formatDateTime.ts';
 import {
   createExplorationProgressSections,
 } from './explorationStatus.ts';
-import { buildGiftOptions, buildGiftSuggestions, hasGiftPreferenceData, type GiftOption } from './giftSuggestions.ts';
+import { type GiftOption } from './giftSuggestions.ts';
+import { createFriendshipPanelRows } from './friendshipPanelModel.ts';
 import { formatGoalLabel, formatPlanTitle, formatWeatherLabel, t } from './i18n.ts';
 import { groupInventoryBySource } from './inventoryGroups.ts';
 import { getItemIconPath } from './itemIcons.ts';
@@ -39,6 +39,7 @@ import {
   localizeCommunityCenterRoomName,
   localizeRecommendationItem,
 } from './recommendationDisplay.ts';
+import { resolveRecommendationTabForSaveClick, resolveRecommendationTabForSaveSelection } from './recommendationTabState.ts';
 import { createRecommendationTabs, type RecommendationTabId } from './recommendationTabs.ts';
 import { mergeImportedSaveForScannedEntry } from './saveImportMerge.ts';
 import { createSidebarGameGroups } from './sidebarGameGroups.ts';
@@ -70,6 +71,7 @@ export function App() {
   const [expandedGameIds, setExpandedGameIds] = useState<Record<string, boolean>>({ 'stardew-valley': true });
   const [showBackToTop, setShowBackToTop] = useState(false);
   const contentRef = useRef<HTMLElement | null>(null);
+  const previousSelectedSaveIdRef = useRef<string | undefined>(undefined);
   const saves = useStore(saveStore, (state) => state.saves);
   const selectedSaveId = useStore(saveStore, (state) => state.selectedSaveId);
   const selectSave = useStore(saveStore, (state) => state.selectSave);
@@ -93,6 +95,15 @@ export function App() {
   const routeProgress = createRouteProgressSummary(snapshot, language);
   const sidebarGameGroups = createSidebarGameGroups(saves, language);
   const hasSelectedSnapshot = Boolean(selectedSaveId && snapshotsBySaveId[selectedSaveId]);
+
+  useEffect(() => {
+    setActiveRecommendationTab((currentTab) => resolveRecommendationTabForSaveSelection({
+      activeTabId: currentTab,
+      previousSaveId: previousSelectedSaveIdRef.current,
+      selectedSaveId,
+    }));
+    previousSelectedSaveIdRef.current = selectedSaveId;
+  }, [selectedSaveId]);
 
   useEffect(() => {
     const selected = selectedSaveId ? snapshotsBySaveId[selectedSaveId] : undefined;
@@ -263,6 +274,15 @@ export function App() {
     }));
   }
 
+  function handleSelectSave(saveId: string) {
+    setActiveRecommendationTab((currentTab) => resolveRecommendationTabForSaveClick({
+      activeTabId: currentTab,
+      clickedSaveId: saveId,
+      selectedSaveId,
+    }));
+    selectSave(saveId);
+  }
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -317,7 +337,7 @@ export function App() {
                           data-selected={save.id === selectedSaveId}
                           key={save.id}
                           type="button"
-                          onClick={() => selectSave(save.id)}
+                          onClick={() => handleSelectSave(save.id)}
                         >
                           <span>{save.name}</span>
                           <small>{formatDateTime(save.lastModified)}</small>
@@ -633,6 +653,9 @@ function FriendshipPanel({ language, snapshot }: { language: AppLanguage; snapsh
     npc: string;
     options: GiftOption[];
   } | null>(null);
+  const rows = useMemo(() => {
+    return createFriendshipPanelRows(snapshot.relationships, snapshot.inventory, language);
+  }, [language, snapshot.inventory, snapshot.relationships]);
 
   if (snapshot.relationships.length === 0) {
     return <p className="empty-state">{t(language, 'friendship.empty')}</p>;
@@ -641,10 +664,7 @@ function FriendshipPanel({ language, snapshot }: { language: AppLanguage; snapsh
   return (
     <>
       <div className="info-grid">
-        {sortRelationshipsByFriendship(snapshot.relationships).map((relationship) => {
-          const suggestions = buildGiftSuggestions(relationship, snapshot.inventory, language);
-          const giftOptions = buildGiftOptions(relationship, snapshot.inventory, language);
-          const giftText = formatGiftSuggestionText(relationship, suggestions, language);
+        {rows.map(({ giftOptions, giftText, relationship }) => {
           const npcName = formatNpcName(relationship.npc, language);
 
           return (
@@ -691,24 +711,6 @@ function FriendshipPanel({ language, snapshot }: { language: AppLanguage; snapsh
       ) : null}
     </>
   );
-}
-
-function formatGiftSuggestionText(
-  relationship: StardewSaveSnapshot['relationships'][number],
-  suggestions: ReturnType<typeof buildGiftSuggestions>,
-  language: AppLanguage,
-): string {
-  if ((relationship.giftsThisWeek ?? 0) >= 2) {
-    return t(language, 'friendship.weeklyFull');
-  }
-  if (suggestions.length > 0) {
-    return suggestions.map((suggestion) => `${suggestion.category}：${suggestion.label}`).join('、');
-  }
-  if (hasGiftPreferenceData(relationship.npc)) {
-    return t(language, 'friendship.noMatch');
-  }
-
-  return t(language, 'friendship.pendingPreference');
 }
 
 function formatGiftSummary(options: GiftOption[], language: AppLanguage): string {

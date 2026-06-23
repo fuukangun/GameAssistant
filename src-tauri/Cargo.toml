@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "1.0.0"
+version = "1.0.1"
 description = "Local Stardew Valley save parser and daily planning assistant"
 authors = ["fuukangun"]
 license = "Apache-2.0"

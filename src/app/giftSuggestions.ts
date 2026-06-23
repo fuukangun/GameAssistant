@@ -31,6 +31,8 @@ const CONSERVATIVE_UNIVERSAL_FALLBACK: Omit<NpcGiftPreferences, 'npc'> = {
   neutralItemNames: [],
 };
 
+const NPC_GIFT_PREFERENCES_BY_NAME = new Map(NPC_GIFT_PREFERENCES.map((preference) => [preference.npc, preference]));
+
 export interface GiftSuggestion {
   category: '最爱' | '喜欢' | '中立';
   label: string;
@@ -67,7 +69,7 @@ export function buildGiftOptions(
     return [];
   }
 
-  const preference = NPC_GIFT_PREFERENCES.find((item) => item.npc === relationship.npc);
+  const preference = NPC_GIFT_PREFERENCES_BY_NAME.get(relationship.npc);
 
   return inventory
     .flatMap((item): GiftOption[] => {
@@ -93,7 +95,7 @@ export function buildGiftOptions(
 }
 
 export function hasGiftPreferenceData(npc: string): boolean {
-  return NPC_GIFT_PREFERENCES.some((item) => item.npc === npc);
+  return NPC_GIFT_PREFERENCES_BY_NAME.has(npc);
 }
 
 function getNpcGiftTier(

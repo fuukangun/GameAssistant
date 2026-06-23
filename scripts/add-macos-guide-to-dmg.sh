@@ -2,16 +2,18 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DMG_PATH="${ROOT_DIR}/src-tauri/target/release/bundle/dmg/游戏助手_1.0.0_aarch64.dmg"
+DMG_DIR="${ROOT_DIR}/src-tauri/target/release/bundle/dmg"
 GUIDE_PATH="${ROOT_DIR}/src-tauri/resources/Mac应用提示已损坏解决方案.md"
 GUIDE_NAME="Mac应用提示已损坏解决方案.md"
-TMP_RW_DMG="${ROOT_DIR}/src-tauri/target/release/bundle/dmg/游戏助手_1.0.0_aarch64.rw.dmg"
-TMP_FINAL_DMG="${ROOT_DIR}/src-tauri/target/release/bundle/dmg/游戏助手_1.0.0_aarch64.with-guide.dmg"
+DMG_PATH="$(find "${DMG_DIR}" -maxdepth 1 -type f -name '游戏助手_*_aarch64.dmg' ! -name '*.rw.dmg' ! -name '*.with-guide.dmg' -print | sort -V | tail -n 1)"
 
-if [[ ! -f "${DMG_PATH}" ]]; then
-  echo "DMG not found: ${DMG_PATH}" >&2
+if [[ -z "${DMG_PATH}" || ! -f "${DMG_PATH}" ]]; then
+  echo "DMG not found in: ${DMG_DIR}" >&2
   exit 1
 fi
+
+TMP_RW_DMG="${DMG_PATH%.dmg}.rw.dmg"
+TMP_FINAL_DMG="${DMG_PATH%.dmg}.with-guide.dmg"
 
 if [[ ! -f "${GUIDE_PATH}" ]]; then
   echo "Guide file not found: ${GUIDE_PATH}" >&2

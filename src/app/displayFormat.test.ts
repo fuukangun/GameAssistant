@@ -6,6 +6,7 @@ import {
   formatEquipmentName,
   formatEquipmentValue,
   formatFarmType,
+  formatFriendshipPoints,
   formatLuck,
   formatNpcName,
   formatPriority,
@@ -19,6 +20,12 @@ test('formats common game labels in Chinese', () => {
   assert.equal(formatFarmType('standard'), '标准农场');
   assert.equal(formatRoute('community_center'), '社区中心路线');
   assert.equal(formatNpcName('Sebastian'), '塞巴斯蒂安');
+  assert.equal(formatNpcName('Dwarf'), '矮人');
+  assert.equal(formatNpcName('Dwarf', 'en-US'), 'Dwarf');
+  assert.equal(formatNpcName('Leo'), '雷欧');
+  assert.equal(formatNpcName('Leo', 'en-US'), 'Leo');
+  assert.equal(formatNpcName('Henchman'), '仆从');
+  assert.equal(formatNpcName('Henchman', 'en-US'), 'Henchman');
   assert.equal(formatPriority('optional'), '可选');
   assert.equal(formatConfidence('medium'), '中');
   assert.equal(formatLuck(0.08), '精灵非常开心');
@@ -36,6 +43,10 @@ test('sorts relationships by friendship points descending', () => {
   ]);
 
   assert.deepEqual(sorted.map((item) => item.npc), ['Sebastian', 'Abigail']);
+});
+
+test('formats friendship points with an explicit heart unit', () => {
+  assert.equal(formatFriendshipPoints({ points: 1889, hearts: 7 }), '1889 / 7❤️');
 });
 
 test('formats missing equipment with specific status text', () => {

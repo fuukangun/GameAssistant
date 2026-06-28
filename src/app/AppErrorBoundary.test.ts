@@ -13,3 +13,7 @@ test('formats non-Error thrown values for the visible crash screen', () => {
 test('falls back when thrown value cannot be described', () => {
   assert.equal(formatUnknownError(null), '未知错误');
 });
+
+test('falls back in English when thrown value cannot be described', () => {
+  assert.equal(formatUnknownError(null, 'en-US'), 'Unknown error');
+});

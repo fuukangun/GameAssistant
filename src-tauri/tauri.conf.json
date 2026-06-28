@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "游戏助手",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "identifier": "com.fuukangun.game-daily-planner",
   "build": {
     "frontendDist": "../dist",
@@ -27,7 +27,7 @@
     "active": true,
     "publisher": "fuukangun",
     "homepage": "https://github.com/fuukangun/GameAssistant",
-    "copyright": "版本 1.0.1 发布于2026-06-23\nDeveloper: fuukangun\nGitHub: https://github.com/fuukangun/GameAssistant",
+    "copyright": "版本 1.1.0 发布于2026-06-27\nDeveloper: fuukangun\nGitHub: https://github.com/fuukangun/GameAssistant",
     "resources": {
       "resources/Mac应用提示已损坏解决方案.md": "Mac应用提示已损坏解决方案.md"
     },

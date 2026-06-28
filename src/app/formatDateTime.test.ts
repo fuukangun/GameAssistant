@@ -17,3 +17,7 @@ test('formats Unix seconds returned by the Tauri backend', () => {
 test('falls back for invalid dates instead of throwing during render', () => {
   assert.equal(formatDateTime('not-a-date'), '时间未知');
 });
+
+test('formats invalid dates in English without leaking Chinese text', () => {
+  assert.equal(formatDateTime('not-a-date', 'en-US'), 'Time unknown');
+});

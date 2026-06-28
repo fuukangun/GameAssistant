@@ -1,7 +1,7 @@
 import type { InventoryItem, RelationshipSummary } from '../shared/types.ts';
 import type { AppLanguage } from './config/localConfig.ts';
 import { sortRelationshipsByFriendship } from './displayFormat.ts';
-import { buildGiftOptions, hasGiftPreferenceData, type GiftOption } from './giftSuggestions.ts';
+import { buildGiftOptions, createGiftOptionBuilder, hasGiftPreferenceData, type GiftOption } from './giftSuggestions.ts';
 import { t } from './i18n.ts';
 
 export interface FriendshipPanelRow {
@@ -12,6 +12,7 @@ export interface FriendshipPanelRow {
 
 interface FriendshipPanelModelDependencies {
   buildGiftOptions?: typeof buildGiftOptions;
+  createGiftOptionBuilder?: typeof createGiftOptionBuilder;
   hasGiftPreferenceData?: typeof hasGiftPreferenceData;
 }
 
@@ -21,11 +22,15 @@ export function createFriendshipPanelRows(
   language: AppLanguage,
   dependencies: FriendshipPanelModelDependencies = {},
 ): FriendshipPanelRow[] {
-  const buildOptions = dependencies.buildGiftOptions ?? buildGiftOptions;
+  const buildOptions = dependencies.createGiftOptionBuilder
+    ? dependencies.createGiftOptionBuilder(inventory, language)
+    : dependencies.buildGiftOptions
+      ? (relationship: RelationshipSummary) => dependencies.buildGiftOptions?.(relationship, inventory, language) ?? []
+      : createGiftOptionBuilder(inventory, language);
   const hasPreferenceData = dependencies.hasGiftPreferenceData ?? hasGiftPreferenceData;
 
   return sortRelationshipsByFriendship(relationships).map((relationship) => {
-    const giftOptions = buildOptions(relationship, inventory, language);
+    const giftOptions = buildOptions(relationship);
     return {
       relationship,
       giftOptions,

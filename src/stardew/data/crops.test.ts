@@ -9,7 +9,18 @@ import {
 import cropPlantingOptions from './cropPlantingOptions.json' with { type: 'json' };
 
 test('loads crop planting options from external JSON data', () => {
-  assert.deepEqual(BASIC_PLANTING_OPTIONS, cropPlantingOptions);
+  assert.deepEqual(
+    BASIC_PLANTING_OPTIONS.map((crop) => crop.id),
+    cropPlantingOptions.map((crop) => crop.id),
+  );
+});
+
+test('normalizes crop seasons and planting zones for greenhouse and island rules', () => {
+  const parsnip = findCropById('parsnip');
+  assert.ok(parsnip);
+
+  assert.deepEqual(parsnip.seasons, ['spring']);
+  assert.deepEqual(parsnip.allowedPlantingZones, ['farm', 'greenhouse', 'ginger_island_farm']);
 });
 
 test('covers basic shop crops across spring summer and fall', () => {

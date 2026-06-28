@@ -1,4 +1,8 @@
 import { Component, createElement, type ErrorInfo, type ReactNode } from 'react';
+import type { AppLanguage } from './config/localConfig.ts';
+import { createDefaultConfig, migrateConfig } from './config/localConfig.ts';
+import { LOCAL_CONFIG_STORAGE_KEY } from './config/localConfigStorage.ts';
+import { t } from './i18n.ts';
 
 type AppErrorBoundaryProps = {
   children: ReactNode;
@@ -8,7 +12,7 @@ type AppErrorBoundaryState = {
   errorMessage: string | null;
 };
 
-export function formatUnknownError(error: unknown): string {
+export function formatUnknownError(error: unknown, language: AppLanguage = 'zh-CN'): string {
   if (error instanceof Error && error.message) {
     return error.message;
   }
@@ -17,7 +21,20 @@ export function formatUnknownError(error: unknown): string {
     return error;
   }
 
-  return '未知错误';
+  return t(language, 'error.unknown');
+}
+
+function getConfiguredLanguage(): AppLanguage {
+  if (typeof window === 'undefined') {
+    return createDefaultConfig().language;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(LOCAL_CONFIG_STORAGE_KEY);
+    return migrateConfig(raw ? JSON.parse(raw) : undefined).language;
+  } catch {
+    return createDefaultConfig().language;
+  }
 }
 
 export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
@@ -27,7 +44,7 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
 
   static getDerivedStateFromError(error: unknown): AppErrorBoundaryState {
     return {
-      errorMessage: formatUnknownError(error),
+      errorMessage: formatUnknownError(error, getConfiguredLanguage()),
     };
   }
 
@@ -37,12 +54,13 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
 
   render() {
     if (this.state.errorMessage) {
+      const language = getConfiguredLanguage();
       return createElement(
         'main',
         { className: 'startup-error', role: 'alert' },
-        createElement('h1', null, '界面启动失败'),
+        createElement('h1', null, t(language, 'error.startupTitle')),
         createElement('p', null, this.state.errorMessage),
-        createElement('p', null, '请把这段错误信息发给开发者，应用主体没有成功渲染。'),
+        createElement('p', null, t(language, 'error.startupBody')),
       );
     }
 

@@ -69,6 +69,13 @@ function input(overrides: Partial<PlannerInput> = {}): PlannerInput {
   };
 }
 
+function findAction(plan: ReturnType<typeof generatePlan>, id: string) {
+  return plan.actions.find((item) => item.id === id)
+    ?? plan.actions
+      .flatMap((item) => item.detail?.recommendationActions ?? [])
+      .find((item) => item.id === id);
+}
+
 test('recommends birthday gift when a loved gift is in inventory', () => {
   const plan = generatePlan(input({
     planDate: { year: 1, season: 'winter', day: 10, sourceSaveDate: { year: 1, season: 'winter', day: 10 } },
@@ -400,7 +407,73 @@ test('localizes English seed names in Chinese planting evidence', () => {
   assert.doesNotMatch(seedEvidence ?? '', /Parsnip Seeds/);
 });
 
-test('raises planting confidence when seed, empty plots, shop, and sprinkler status are parsed', () => {
+test('raises planting confidence when seed, empty plots, shop, and sprinkler coverage are parsed', () => {
+  const plan = generatePlan(input({
+    planDate: { year: 1, season: 'spring', day: 24, sourceSaveDate: { year: 1, season: 'spring', day: 24 } },
+    snapshot: baseSnapshot({
+      time: { year: 1, season: 'spring', day: 24 },
+      wallet: { money: 1000 },
+      crops: [],
+      inventory: [
+        { id: 472, name: 'Parsnip Seeds', stack: 12, source: 'chest', sourceLabel: '储物箱' },
+        { id: 621, name: 'Quality Sprinkler', stack: 1, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      farmPlotSummary: {
+        plantedCropCount: 0,
+        tilledTileCount: 8,
+        emptyTileCount: 8,
+        occupiedObjectCount: 0,
+        resourceClumpCount: 0,
+        buildingCount: 0,
+        sprinklerCoverageParsed: true,
+        parsedFields: ['locations.GameLocation[name=Farm].terrainFeatures'],
+        unknownFields: [],
+      },
+    }),
+  }));
+
+  const planting = plan.actions.find((item) => item.id === 'plant-parsnip');
+
+  assert.equal(planting?.confidence, 'high');
+  assert.equal(planting?.evidence.find((item) => item.label === '商店')?.value, '皮埃尔：周三休息；Joja：通常开放');
+  assert.equal(planting?.evidence.find((item) => item.label === '可用空地')?.value, '已耕空地 8 块');
+  assert.equal(planting?.evidence.find((item) => item.label === '洒水条件')?.value, '检测到洒水器');
+  assert.deepEqual(planting?.uncertainty, []);
+});
+
+test('keeps planting confidence medium when sprinklers exist but coverage is unparsed', () => {
+  const plan = generatePlan(input({
+    planDate: { year: 1, season: 'spring', day: 24, sourceSaveDate: { year: 1, season: 'spring', day: 24 } },
+    snapshot: baseSnapshot({
+      time: { year: 1, season: 'spring', day: 24 },
+      wallet: { money: 1000 },
+      crops: [],
+      inventory: [
+        { id: 472, name: 'Parsnip Seeds', stack: 12, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      farmPlotSummary: {
+        plantedCropCount: 0,
+        tilledTileCount: 8,
+        emptyTileCount: 8,
+        occupiedObjectCount: 0,
+        resourceClumpCount: 0,
+        buildingCount: 0,
+        sprinklerCount: 1,
+        sprinklerCoverageParsed: false,
+        parsedFields: ['locations.GameLocation[name=Farm].terrainFeatures', 'locations.GameLocation[name=Farm].objects'],
+        unknownFields: ['sprinklerCoverage'],
+      },
+    }),
+  }));
+
+  const planting = plan.actions.find((item) => item.id === 'plant-parsnip');
+
+  assert.equal(planting?.confidence, 'medium');
+  assert.equal(planting?.evidence.find((item) => item.label === '洒水条件')?.value, '检测到洒水器 1 个');
+  assert.equal(planting?.uncertainty.some((item) => item.includes('洒水覆盖')), true);
+});
+
+test('does not treat inventory sprinklers as parsed plot coverage', () => {
   const plan = generatePlan(input({
     planDate: { year: 1, season: 'spring', day: 24, sourceSaveDate: { year: 1, season: 'spring', day: 24 } },
     snapshot: baseSnapshot({
@@ -426,11 +499,9 @@ test('raises planting confidence when seed, empty plots, shop, and sprinkler sta
 
   const planting = plan.actions.find((item) => item.id === 'plant-parsnip');
 
-  assert.equal(planting?.confidence, 'high');
-  assert.equal(planting?.evidence.find((item) => item.label === '商店')?.value, '皮埃尔：周三休息；Joja：通常开放');
-  assert.equal(planting?.evidence.find((item) => item.label === '可用空地')?.value, '已耕空地 8 块');
-  assert.equal(planting?.evidence.find((item) => item.label === '洒水条件')?.value, '检测到洒水器');
-  assert.deepEqual(planting?.uncertainty, []);
+  assert.equal(planting?.confidence, 'medium');
+  assert.equal(planting?.evidence.find((item) => item.label === '洒水条件')?.value, '库存有洒水器，未确认覆盖地块');
+  assert.equal(planting?.uncertainty.some((item) => item.includes('洒水覆盖')), true);
 });
 
 test('uses conservative multi-harvest ROI for regrow crop planting estimates', () => {
@@ -460,6 +531,247 @@ test('does not recommend planting crops that cannot mature before season end', (
   }));
 
   assert.equal(plan.actions.some((item) => item.id === 'plant-parsnip'), false);
+});
+
+test('recommends greenhouse planting in winter without using farm plot evidence', () => {
+  const plan = generatePlan(input({
+    planDate: { year: 3, season: 'winter', day: 5, sourceSaveDate: { year: 3, season: 'winter', day: 5 } },
+    snapshot: baseSnapshot({
+      time: { year: 3, season: 'winter', day: 5 },
+      wallet: { money: 1000 },
+      crops: [],
+      inventory: [
+        { id: 481, name: 'Blueberry Seeds', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      farmPlotSummary: {
+        plantedCropCount: 0,
+        tilledTileCount: 0,
+        emptyTileCount: 0,
+        occupiedObjectCount: 0,
+        resourceClumpCount: 0,
+        buildingCount: 0,
+        parsedFields: ['locations.GameLocation[name=Farm].terrainFeatures'],
+        unknownFields: [],
+      },
+      plantingZones: [
+        {
+          zone: 'farm',
+          unlockState: 'unlocked',
+          usable: true,
+          plantedCropCount: 0,
+          matureCropCount: 0,
+          tilledTileCount: 0,
+          emptyTilledTileCount: 0,
+          parsedFields: ['locations.GameLocation[name=Farm].terrainFeatures'],
+          unknownFields: [],
+        },
+        {
+          zone: 'greenhouse',
+          unlockState: 'unlocked',
+          usable: true,
+          plantedCropCount: 1,
+          matureCropCount: 0,
+          tilledTileCount: 12,
+          emptyTilledTileCount: 8,
+          sprinklerCount: 2,
+          sprinklerCoverageParsed: false,
+          parsedFields: ['locations.GameLocation[name=Greenhouse].terrainFeatures', 'locations.GameLocation[name=Greenhouse].objects'],
+          unknownFields: ['sprinklerCoverage'],
+        },
+      ],
+    }),
+  }));
+
+  const greenhouse = plan.actions
+    .find((item) => item.id === 'plant-greenhouse-summary')
+    ?.detail?.greenhousePlantingActions
+    ?.find((item) => item.id === 'plant-greenhouse-blueberry');
+
+  assert.equal(greenhouse?.title, '温室可以种植蓝莓');
+  assert.equal(greenhouse?.confidence, 'medium');
+  assert.equal(greenhouse?.evidence.find((item) => item.label === '推荐地块')?.value, '温室');
+  assert.equal(greenhouse?.evidence.find((item) => item.label === '可用空地')?.value, '温室已耕空地 8 块');
+  assert.equal(greenhouse?.evidence.find((item) => item.label === '洒水条件')?.value, '温室检测到洒水器 2 个');
+  assert.equal(greenhouse?.reason.includes('不受当前季节限制'), true);
+  assert.equal(plan.actions.some((item) => item.id === 'plant-blueberry'), false);
+});
+
+test('groups greenhouse planting actions into a single detail card', () => {
+  const plan = generatePlan(input({
+    planDate: { year: 3, season: 'winter', day: 5, sourceSaveDate: { year: 3, season: 'winter', day: 5 } },
+    snapshot: baseSnapshot({
+      time: { year: 3, season: 'winter', day: 5 },
+      wallet: { money: 5000 },
+      crops: [],
+      inventory: [
+        { id: 481, name: 'Blueberry Seeds', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      plantingZones: [
+        {
+          zone: 'greenhouse',
+          unlockState: 'unlocked',
+          usable: true,
+          plantedCropCount: 1,
+          matureCropCount: 0,
+          tilledTileCount: 12,
+          emptyTilledTileCount: 8,
+          sprinklerCount: 2,
+          sprinklerCoverageParsed: false,
+          parsedFields: ['locations.GameLocation[name=Greenhouse].terrainFeatures', 'locations.GameLocation[name=Greenhouse].objects'],
+          unknownFields: ['sprinklerCoverage'],
+        },
+      ],
+    }),
+  }));
+
+  const greenhouse = plan.actions.find((item) => item.id === 'plant-greenhouse-summary');
+  const greenhouseDetails = greenhouse?.detail?.greenhousePlantingActions ?? [];
+
+  assert.equal(plan.actions.some((item) => item.id.startsWith('plant-greenhouse-') && item.id !== 'plant-greenhouse-summary'), false);
+  assert.equal(greenhouse?.title, '温室种植建议');
+  assert.equal(greenhouse?.priority, 'optional');
+  assert.equal(greenhouse?.confidence, 'medium');
+  assert.equal(greenhouse?.evidence.find((item) => item.label === '推荐数量')?.value, `${greenhouseDetails.length} 项`);
+  assert.equal(greenhouse?.evidence.find((item) => item.label === '可用空地')?.value, '温室已耕空地 8 块');
+  assert.equal(greenhouse?.evidence.find((item) => item.label === '洒水条件')?.value, '温室检测到洒水器 2 个');
+  assert.equal(greenhouseDetails.length > 1, true);
+  assert.equal(greenhouseDetails.some((item) => item.id === 'plant-greenhouse-blueberry'), true);
+});
+
+test('does not recommend greenhouse planting when greenhouse status is unknown', () => {
+  const plan = generatePlan(input({
+    planDate: { year: 1, season: 'spring', day: 12, sourceSaveDate: { year: 1, season: 'spring', day: 12 } },
+    snapshot: baseSnapshot({
+      time: { year: 1, season: 'spring', day: 12 },
+      wallet: { money: 1000 },
+      crops: [],
+      plantingZones: [
+        {
+          zone: 'greenhouse',
+          unlockState: 'unknown',
+          usable: undefined,
+          parsedFields: [],
+          unknownFields: ['greenhouseStatus'],
+        },
+      ],
+    }),
+  }));
+
+  assert.equal(plan.actions.some((item) => item.id.startsWith('plant-greenhouse-')), false);
+});
+
+test('recommends ginger island farm planting only when the island farm zone is usable', () => {
+  const usablePlan = generatePlan(input({
+    planDate: { year: 4, season: 'winter', day: 8, sourceSaveDate: { year: 4, season: 'winter', day: 8 } },
+    snapshot: baseSnapshot({
+      time: { year: 4, season: 'winter', day: 8 },
+      wallet: { money: 5000 },
+      crops: [],
+      inventory: [
+        { id: 481, name: 'Blueberry Seeds', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      farm: {
+        ...baseSnapshot().farm,
+        hasIslandAccess: true,
+      },
+      plantingZones: [
+        {
+          zone: 'ginger_island_farm',
+          unlockState: 'unlocked',
+          usable: true,
+          plantedCropCount: 0,
+          matureCropCount: 0,
+          tilledTileCount: 4,
+          emptyTilledTileCount: 4,
+          sprinklerCoverageParsed: true,
+          parsedFields: ['locations.GameLocation[name=IslandWest].terrainFeatures'],
+          unknownFields: [],
+        },
+      ],
+    }),
+  }));
+  const unknownPlan = generatePlan(input({
+    planDate: { year: 4, season: 'winter', day: 8, sourceSaveDate: { year: 4, season: 'winter', day: 8 } },
+    snapshot: baseSnapshot({
+      time: { year: 4, season: 'winter', day: 8 },
+      wallet: { money: 5000 },
+      crops: [],
+      inventory: [
+        { id: 481, name: 'Blueberry Seeds', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      farm: {
+        ...baseSnapshot().farm,
+        hasIslandAccess: true,
+      },
+      plantingZones: [
+        {
+          zone: 'ginger_island_farm',
+          unlockState: 'unlocked',
+          usable: undefined,
+          parsedFields: [],
+          unknownFields: ['gingerIslandFarmLocation'],
+        },
+      ],
+    }),
+  }));
+
+  const island = usablePlan.actions
+    .find((item) => item.id === 'plant-ginger-island-farm-summary')
+    ?.detail?.plantingActions
+    ?.find((item) => item.id === 'plant-ginger-island-farm-blueberry');
+  assert.equal(island?.title, '姜岛农场可以种植蓝莓');
+  assert.equal(island?.confidence, 'high');
+  assert.equal(island?.evidence.find((item) => item.label === '推荐地块')?.value, '姜岛农场');
+  assert.equal(island?.evidence.find((item) => item.label === '可用空地')?.value, '姜岛农场已耕空地 4 块');
+  assert.equal(usablePlan.actions.some((item) => item.id.startsWith('plant-ginger-island-farm-') && item.id !== 'plant-ginger-island-farm-summary'), false);
+  assert.equal(unknownPlan.actions.some((item) => item.id.startsWith('plant-ginger-island-farm-')), false);
+});
+
+test('groups ginger island farm planting actions into a single detail card', () => {
+  const plan = generatePlan(input({
+    planDate: { year: 4, season: 'winter', day: 8, sourceSaveDate: { year: 4, season: 'winter', day: 8 } },
+    snapshot: baseSnapshot({
+      time: { year: 4, season: 'winter', day: 8 },
+      wallet: { money: 5000 },
+      crops: [],
+      inventory: [
+        { id: 481, name: 'Blueberry Seeds', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      farm: {
+        ...baseSnapshot().farm,
+        hasIslandAccess: true,
+      },
+      plantingZones: [
+        {
+          zone: 'ginger_island_farm',
+          unlockState: 'unlocked',
+          usable: true,
+          plantedCropCount: 0,
+          matureCropCount: 0,
+          tilledTileCount: 16,
+          emptyTilledTileCount: 12,
+          sprinklerCount: 3,
+          sprinklerCoverageParsed: false,
+          parsedFields: ['locations.GameLocation[name=IslandWest].terrainFeatures', 'locations.GameLocation[name=IslandWest].objects'],
+          unknownFields: ['sprinklerCoverage'],
+        },
+      ],
+    }),
+  }));
+
+  const island = plan.actions.find((item) => item.id === 'plant-ginger-island-farm-summary');
+  const islandDetails = island?.detail?.plantingActions ?? [];
+
+  assert.equal(plan.actions.some((item) => item.id.startsWith('plant-ginger-island-farm-') && item.id !== 'plant-ginger-island-farm-summary'), false);
+  assert.equal(island?.title, '姜岛农场种植建议');
+  assert.equal(island?.priority, 'optional');
+  assert.equal(island?.confidence, 'medium');
+  assert.equal(island?.evidence.find((item) => item.label === '推荐地块')?.value, '姜岛农场');
+  assert.equal(island?.evidence.find((item) => item.label === '推荐数量')?.value, `${islandDetails.length} 项`);
+  assert.equal(island?.evidence.find((item) => item.label === '可用空地')?.value, '姜岛农场已耕空地 12 块');
+  assert.equal(island?.evidence.find((item) => item.label === '洒水条件')?.value, '姜岛农场检测到洒水器 3 个');
+  assert.equal(islandDetails.length > 1, true);
+  assert.equal(islandDetails.some((item) => item.id === 'plant-ginger-island-farm-blueberry'), true);
 });
 
 test('free mode still produces useful actions when no special reminders apply', () => {
@@ -612,11 +924,170 @@ test('recommends processing fish when smoker, fish, and coal are available', () 
   const action = plan.actions.find((item) => item.id === 'process-fish-smoker');
 
   assert.equal(action?.category, 'profit');
-  assert.equal(action?.confidence, 'high');
+  assert.equal(action?.confidence, 'medium');
   assert.match(action?.title ?? '', /熏鱼/);
   assert.equal(action?.evidence.find((item) => item.label === '加工设备')?.value, '鱼熏制机 x1（储物箱）');
   assert.equal(action?.evidence.find((item) => item.label === '可加工原料')?.value, '河豚 x2（背包）');
   assert.equal(action?.evidence.find((item) => item.label === '辅料')?.value, '煤炭 x5（储物箱）');
+});
+
+test('degrades high-confidence processing when machine state is unparsed', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 'FishSmoker', name: '鱼熏制机', stack: 1, source: 'chest', sourceLabel: '储物箱' },
+        { id: 128, name: '河豚', stack: 2, source: 'backpack', sourceLabel: '背包' },
+        { id: 382, name: '煤炭', stack: 5, source: 'chest', sourceLabel: '储物箱' },
+      ],
+    }),
+  }));
+
+  const action = plan.actions.find((item) => item.id === 'process-fish-smoker');
+
+  assert.equal(action?.confidence, 'medium');
+  assert.equal(action?.uncertainty.some((item) => item.includes('机器状态未解析')), true);
+});
+
+test('removes machine occupancy uncertainty when an idle machine state is parsed', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 128, name: '河豚', stack: 2, source: 'backpack', sourceLabel: '背包' },
+        { id: 382, name: '煤炭', stack: 5, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      machineStates: [
+        {
+          machineId: 'FishSmoker',
+          machineName: '鱼熏制机',
+          state: 'idle',
+          parseConfidence: 'high',
+          unknownFields: [],
+        },
+      ],
+    }),
+  }));
+
+  const action = plan.actions.find((item) => item.id === 'process-fish-smoker');
+
+  assert.equal(action?.confidence, 'high');
+  assert.equal(action?.uncertainty.some((item) => item.includes('机器当前占用状态')), false);
+  assert.equal(action?.uncertainty.some((item) => item.includes('机器状态未解析')), false);
+});
+
+test('does not schedule new processing on machines that are already processing', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 'Keg', name: '小桶', stack: 1, source: 'chest', sourceLabel: '储物箱' },
+        { id: 258, name: 'Blueberry', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      machineStates: [
+        {
+          machineId: 'Keg',
+          machineName: '小桶',
+          state: 'processing',
+          heldObjectId: 258,
+          minutesUntilReady: 120,
+          parseConfidence: 'high',
+          unknownFields: [],
+        },
+      ],
+    }),
+  }));
+
+  assert.equal(plan.actions.some((item) => item.id === 'process-keg'), false);
+});
+
+test('recommends processing with an idle placed machine even when machine is not in inventory', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 258, name: 'Blueberry', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      machineStates: [
+        {
+          machineId: 'Keg',
+          machineName: '小桶',
+          state: 'idle',
+          parseConfidence: 'high',
+          unknownFields: [],
+        },
+      ],
+    }),
+  }));
+
+  const action = plan.actions.find((item) => item.id === 'process-keg');
+
+  assert.equal(action?.category, 'profit');
+  assert.equal(action?.confidence, 'medium');
+  assert.equal(action?.evidence.find((item) => item.label === '机器状态')?.value, '小桶空闲');
+  assert.equal(action?.evidence.some((item) => item.label === '加工设备'), false);
+  assert.equal(plan.actions.some((item) => item.id === 'complete-machine-keg'), false);
+});
+
+test('uses an idle machine when another machine of the same type is processing', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 258, name: 'Blueberry', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      machineStates: [
+        {
+          machineId: 'Keg',
+          machineName: '小桶',
+          state: 'processing',
+          heldObjectId: 258,
+          minutesUntilReady: 120,
+          parseConfidence: 'high',
+          unknownFields: [],
+        },
+        {
+          machineId: 'Keg',
+          machineName: '小桶',
+          state: 'idle',
+          parseConfidence: 'high',
+          unknownFields: [],
+        },
+      ],
+    }),
+  }));
+
+  const action = plan.actions.find((item) => item.id === 'process-keg');
+
+  assert.equal(action?.category, 'profit');
+  assert.equal(action?.evidence.find((item) => item.label === '机器状态')?.value, '小桶空闲');
+});
+
+test('degrades processing confidence when machine state is unknown', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 'Keg', name: '小桶', stack: 1, source: 'chest', sourceLabel: '储物箱' },
+        { id: 258, name: 'Blueberry', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      machineStates: [
+        {
+          machineId: 'Keg',
+          machineName: '小桶',
+          state: 'unknown',
+          parseConfidence: 'low',
+          unknownFields: ['heldObject', 'minutesUntilReady'],
+        },
+      ],
+    }),
+  }));
+
+  const action = plan.actions.find((item) => item.id === 'process-keg');
+
+  assert.equal(action?.confidence, 'medium');
+  assert.equal(action?.uncertainty.some((item) => item.includes('机器状态未确认')), true);
+  assert.equal(action?.evidence.find((item) => item.label === '机器状态')?.value, '小桶状态未确认');
 });
 
 test('recommends artisan processing when keg and fruit are available', () => {
@@ -651,13 +1122,37 @@ test('recommends common artisan machines from external processing rules', () => 
     }),
   }));
 
-  const mayonnaise = plan.actions.find((item) => item.id === 'process-mayonnaise-machine');
-  const cheese = plan.actions.find((item) => item.id === 'process-cheese-press');
+  const mayonnaise = findAction(plan, 'process-mayonnaise-machine');
+  const cheese = findAction(plan, 'process-cheese-press');
 
   assert.equal(mayonnaise?.category, 'profit');
   assert.equal(mayonnaise?.evidence.find((item) => item.label === '可加工原料')?.value, '鸡蛋 x3（冰箱）');
   assert.equal(cheese?.category, 'profit');
   assert.equal(cheese?.evidence.find((item) => item.label === '可加工原料')?.value, '牛奶 x2（冰箱）');
+});
+
+test('groups processing actions into a single detail card', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 'MayonnaiseMachine', name: '蛋黄酱机', stack: 1, source: 'chest', sourceLabel: '储物箱' },
+        { id: 176, name: 'Egg', stack: 3, source: 'fridge', sourceLabel: '冰箱' },
+        { id: 'CheesePress', name: '奶酪压制机', stack: 1, source: 'chest', sourceLabel: '储物箱' },
+        { id: 184, name: 'Milk', stack: 2, source: 'fridge', sourceLabel: '冰箱' },
+      ],
+    }),
+  }));
+
+  const processing = plan.actions.find((item) => item.id === 'process-summary');
+  const details = processing?.detail?.recommendationActions ?? [];
+
+  assert.equal(plan.actions.some((item) => item.id.startsWith('process-') && item.id !== 'process-summary'), false);
+  assert.equal(processing?.title, '加工建议');
+  assert.equal(processing?.category, 'profit');
+  assert.equal(processing?.evidence.find((item) => item.label === '推荐数量')?.value, `${details.length} 项`);
+  assert.equal(details.some((item) => item.id === 'process-mayonnaise-machine'), true);
+  assert.equal(details.some((item) => item.id === 'process-cheese-press'), true);
 });
 
 test('recommends completing missing processing machines when ingredients are available', () => {
@@ -672,16 +1167,115 @@ test('recommends completing missing processing machines when ingredients are ava
     }),
   }));
 
-  const keg = plan.actions.find((item) => item.id === 'complete-machine-keg');
-  const mayonnaiseMachine = plan.actions.find((item) => item.id === 'complete-machine-mayonnaise-machine');
+  const keg = findAction(plan, 'complete-machine-keg');
+  const mayonnaiseMachine = findAction(plan, 'complete-machine-mayonnaise-machine');
 
   assert.equal(keg?.category, 'progress');
   assert.equal(keg?.priority, 'recommended');
   assert.equal(keg?.confidence, 'medium');
   assert.equal(keg?.evidence.find((item) => item.label === '缺少设备')?.value, '小桶');
   assert.equal(keg?.evidence.find((item) => item.label === '可加工原料')?.value, '蓝莓 x20（储物箱）');
+  assert.equal(keg?.evidence.find((item) => item.label === '制作状态')?.value, '配方、材料缺口和购买状态未解析');
+  assert.match(keg?.uncertainty.join(' ') ?? '', /配方解锁状态、制作材料缺口和可购买状态/);
   assert.equal(mayonnaiseMachine?.evidence.find((item) => item.label === '缺少设备')?.value, '蛋黄酱机');
   assert.equal(mayonnaiseMachine?.evidence.find((item) => item.label === '可加工原料')?.value, '鸡蛋 x6（冰箱）');
+});
+
+test('groups missing machine completion actions into a single detail card', () => {
+  const plan = generatePlan(input({
+    goal: 'money',
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 258, name: 'Blueberry', stack: 20, source: 'chest', sourceLabel: '储物箱' },
+        { id: 176, name: 'Egg', stack: 6, source: 'fridge', sourceLabel: '冰箱' },
+      ],
+    }),
+  }));
+
+  const completion = plan.actions.find((item) => item.id === 'complete-machine-summary');
+  const details = completion?.detail?.recommendationActions ?? [];
+
+  assert.equal(plan.actions.some((item) => item.id.startsWith('complete-machine-') && item.id !== 'complete-machine-summary'), false);
+  assert.equal(completion?.title, '补齐加工设备建议');
+  assert.equal(completion?.category, 'progress');
+  assert.equal(completion?.evidence.find((item) => item.label === '推荐数量')?.value, `${details.length} 项`);
+  assert.equal(details.some((item) => item.id === 'complete-machine-keg'), true);
+  assert.equal(details.some((item) => item.id === 'complete-machine-mayonnaise-machine'), true);
+});
+
+test('uses parsed crafting recipe status for missing processing machines', () => {
+  const plan = generatePlan(input({
+    goal: 'money',
+    snapshot: baseSnapshot({
+      crops: [],
+      crafting: {
+        parsed: true,
+        unlockedRecipeIds: ['keg'],
+      },
+      inventory: [
+        { id: 258, name: 'Blueberry', stack: 20, source: 'chest', sourceLabel: '储物箱' },
+      ],
+    }),
+  }));
+
+  const keg = findAction(plan, 'complete-machine-keg');
+
+  assert.equal(keg?.evidence.find((item) => item.label === '制作状态')?.value, '配方已解锁，材料不足：木材缺30、铜锭缺1、铁锭缺1、橡树树脂缺1；不可直接购买');
+  assert.equal(keg?.uncertainty.some((item) => item.includes('配方解锁状态')), false);
+  assert.equal(keg?.uncertainty.some((item) => item.includes('制作材料缺口和可购买状态')), false);
+});
+
+test('calculates crafting material gaps from processing static data', () => {
+  const plan = generatePlan(input({
+    goal: 'money',
+    snapshot: baseSnapshot({
+      crops: [],
+      crafting: {
+        parsed: true,
+        unlockedRecipeIds: ['keg'],
+      },
+      inventory: [
+        { id: 388, name: 'Wood', stack: 20, source: 'chest', sourceLabel: '储物箱' },
+        { id: 334, name: 'Copper Bar', stack: 1, source: 'chest', sourceLabel: '储物箱' },
+        { id: 258, name: 'Blueberry', stack: 20, source: 'chest', sourceLabel: '储物箱' },
+      ],
+    }),
+  }));
+
+  const keg = findAction(plan, 'complete-machine-keg');
+
+  assert.equal(keg?.evidence.find((item) => item.label === '制作状态')?.value, '配方已解锁，材料不足：木材缺10、铁锭缺1、橡树树脂缺1；不可直接购买');
+  assert.equal(keg?.uncertainty.some((item) => item.includes('制作材料缺口')), false);
+  assert.equal(keg?.uncertainty.some((item) => item.includes('可购买状态')), false);
+});
+
+test('shows processing time and value estimates from processing static data', () => {
+  const plan = generatePlan(input({
+    goal: 'money',
+    snapshot: baseSnapshot({
+      crops: [],
+      inventory: [
+        { id: 'MayonnaiseMachine', name: '蛋黄酱机', stack: 1, source: 'chest', sourceLabel: '储物箱' },
+        { id: 176, name: 'Egg', stack: 3, source: 'fridge', sourceLabel: '冰箱' },
+      ],
+      machineStates: [
+        {
+          machineId: 'MayonnaiseMachine',
+          machineName: '蛋黄酱机',
+          state: 'idle',
+          parseConfidence: 'high',
+          unknownFields: [],
+        },
+      ],
+    }),
+  }));
+
+  const mayonnaise = plan.actions.find((item) => item.id === 'process-mayonnaise-machine');
+
+  assert.equal(mayonnaise?.evidence.find((item) => item.label === '加工耗时')?.value, '3小时');
+  assert.equal(mayonnaise?.evidence.find((item) => item.label === '加工收益')?.value, '约190金/个');
+  assert.equal(mayonnaise?.uncertainty.some((item) => item.includes('机器当前占用状态')), false);
 });
 
 test('does not treat bombs as keg or dehydrator ingredients', () => {
@@ -725,7 +1319,95 @@ test('recommends backpack and tool upgrades when resources are available', () =>
   assert.equal(backpack?.confidence, 'high');
   assert.match(backpack?.title ?? '', /背包/);
   assert.equal(pickaxe?.category, 'progress');
+  assert.equal(pickaxe?.confidence, 'medium');
   assert.equal(pickaxe?.evidence.find((item) => item.label === '所需材料')?.value, '铜锭 x5（储物箱）');
+  assert.equal(pickaxe?.evidence.find((item) => item.label === '下一等级')?.value, '铜十字镐');
+  assert.equal(pickaxe?.evidence.find((item) => item.label === '铁匠铺状态')?.value, '未解析');
+  assert.match(pickaxe?.uncertainty.join(' ') ?? '', /铁匠铺占用状态/);
+});
+
+test('keeps tool upgrade high confidence when blacksmith is parsed as available', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      blacksmith: {
+        parsed: true,
+      },
+      wallet: { money: 4500 },
+      player: {
+        maxEnergy: 270,
+        maxItems: 36,
+        equipment: {
+          ringNames: [],
+          pickaxeName: 'Pickaxe',
+        },
+      },
+      inventory: [
+        { id: 334, name: 'Copper Bar', stack: 5, source: 'chest', sourceLabel: '储物箱' },
+      ],
+    }),
+  }));
+
+  const pickaxe = plan.actions.find((item) => item.id === 'upgrade-pickaxe-copper');
+
+  assert.equal(pickaxe?.confidence, 'high');
+  assert.equal(pickaxe?.evidence.find((item) => item.label === '铁匠铺状态')?.value, '未发现正在处理的工具');
+  assert.equal(pickaxe?.uncertainty.some((item) => item.includes('铁匠铺占用状态')), false);
+});
+
+test('does not recommend another tool upgrade when blacksmith is already processing a tool', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      blacksmith: {
+        parsed: true,
+        toolInProgress: 'Pickaxe',
+        daysUntilReady: 1,
+      },
+      wallet: { money: 4500 },
+      player: {
+        maxEnergy: 270,
+        maxItems: 36,
+        equipment: {
+          ringNames: [],
+          axeName: 'Axe',
+        },
+      },
+      inventory: [
+        { id: 334, name: 'Copper Bar', stack: 5, source: 'chest', sourceLabel: '储物箱' },
+      ],
+    }),
+  }));
+
+  assert.equal(plan.actions.some((item) => item.id === 'upgrade-axe-copper'), false);
+});
+
+test('does not recommend copper upgrades for already upgraded tools', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      wallet: { money: 100000 },
+      player: {
+        maxEnergy: 270,
+        maxItems: 36,
+        equipment: {
+          ringNames: [],
+          pickaxeName: 'Iridium Pickaxe',
+          axeName: 'Iridium Axe',
+          wateringCanName: 'Iridium Watering Can',
+          hoeName: 'Iridium Hoe',
+        },
+      },
+      inventory: [
+        { id: 334, name: 'Copper Bar', stack: 50, source: 'chest', sourceLabel: '储物箱' },
+      ],
+    }),
+  }));
+
+  assert.equal(plan.actions.some((item) => item.id === 'upgrade-pickaxe-copper'), false);
+  assert.equal(plan.actions.some((item) => item.id === 'upgrade-axe-copper'), false);
+  assert.equal(plan.actions.some((item) => item.id === 'upgrade-watering-can-copper'), false);
+  assert.equal(plan.actions.some((item) => item.id === 'upgrade-hoe-copper'), false);
 });
 
 test('recommends additional tool upgrades from external upgrade rules', () => {
@@ -753,6 +1435,44 @@ test('recommends additional tool upgrades from external upgrade rules', () => {
   assert.equal(wateringCan?.confidence, 'medium');
   assert.equal(wateringCan?.evidence.find((item) => item.label === '当前装备')?.value, 'Watering Can');
   assert.equal(wateringCan?.evidence.find((item) => item.label === '所需材料')?.value, '铜锭 x5（储物箱）');
+  assert.equal(wateringCan?.evidence.find((item) => item.label === '下一等级')?.value, '铜喷壶');
+  assert.equal(wateringCan?.evidence.find((item) => item.label === '铁匠铺状态')?.value, '未解析');
+  assert.match(wateringCan?.uncertainty.join(' ') ?? '', /雨天前后|铁匠铺占用状态/);
+});
+
+test('groups tool upgrade actions into a single detail card', () => {
+  const plan = generatePlan(input({
+    snapshot: baseSnapshot({
+      crops: [],
+      wallet: { money: 12000 },
+      player: {
+        maxEnergy: 270,
+        maxItems: 36,
+        equipment: {
+          ringNames: [],
+          pickaxeName: 'Pickaxe',
+          axeName: 'Axe',
+          wateringCanName: 'Watering Can',
+          hoeName: 'Hoe',
+        },
+      },
+      inventory: [
+        { id: 334, name: 'Copper Bar', stack: 20, source: 'chest', sourceLabel: '储物箱' },
+      ],
+    }),
+  }));
+
+  const upgrades = plan.actions.find((item) => item.id === 'upgrade-tool-summary');
+  const details = upgrades?.detail?.recommendationActions ?? [];
+
+  assert.equal(plan.actions.some((item) => /^upgrade-(pickaxe|axe|watering-can|hoe)-/.test(item.id)), false);
+  assert.equal(upgrades?.title, '工具升级建议');
+  assert.equal(upgrades?.category, 'progress');
+  assert.equal(upgrades?.evidence.find((item) => item.label === '推荐数量')?.value, `${details.length} 项`);
+  assert.equal(details.some((item) => item.id === 'upgrade-pickaxe-copper'), true);
+  assert.equal(details.some((item) => item.id === 'upgrade-axe-copper'), true);
+  assert.equal(details.some((item) => item.id === 'upgrade-watering-can-copper'), true);
+  assert.equal(details.some((item) => item.id === 'upgrade-hoe-copper'), true);
 });
 
 test('includes parsed mine readiness evidence in mine progress actions', () => {

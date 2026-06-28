@@ -7,6 +7,7 @@ export interface SaveState {
   isScanning: boolean;
   setSaves: (saves: SaveEntry[]) => void;
   upsertSave: (save: SaveEntry) => void;
+  removeSaveById: (saveId: string) => void;
   removeSaveByPath: (path: string) => void;
   selectSave: (saveId: string) => void;
   setScanning: (isScanning: boolean) => void;
@@ -19,10 +20,15 @@ export function createSaveStore() {
     isScanning: false,
     setSaves: (saves) => {
       const currentSelected = get().selectedSaveId;
-      const selectedStillExists = saves.some((save) => save.id === currentSelected);
+      const manualSaves = get().saves.filter((save) => save.source === 'manual');
+      const nextSaves = [
+        ...saves.map((save) => ({ ...save, source: save.source ?? 'scanned' as const })),
+        ...manualSaves,
+      ];
+      const selectedStillExists = nextSaves.some((save) => save.id === currentSelected);
       set({
-        saves,
-        selectedSaveId: selectedStillExists ? currentSelected : saves[0]?.id,
+        saves: nextSaves,
+        selectedSaveId: selectedStillExists ? currentSelected : nextSaves[0]?.id,
       });
     },
     upsertSave: (save) => {
@@ -41,6 +47,17 @@ export function createSaveStore() {
             ...state.saves,
           ],
           selectedSaveId: save.id,
+        };
+      });
+    },
+    removeSaveById: (saveId) => {
+      set((state) => {
+        const saves = state.saves.filter((save) => save.id !== saveId);
+        const selectedStillExists = saves.some((save) => save.id === state.selectedSaveId);
+
+        return {
+          saves,
+          selectedSaveId: selectedStillExists ? state.selectedSaveId : saves[0]?.id,
         };
       });
     },

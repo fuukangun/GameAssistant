@@ -7,6 +7,11 @@ export interface ProcessingRule {
   id: string;
   machineIds: Array<number | string>;
   machineNames: string[];
+  craftRecipeName?: string;
+  craftMaterials?: ProcessingMaterialRequirement[];
+  purchasable?: boolean;
+  processingMinutes?: number;
+  valueEstimateGold?: number;
   ingredientKind?: ProcessingIngredientKind;
   ingredientIds?: Array<number | string>;
   ingredientNames?: string[];
@@ -20,6 +25,12 @@ export interface ProcessingRule {
   priorityDefault: RecommendationItem['priority'];
   confidence: Confidence;
   uncertainty: string;
+}
+
+export interface ProcessingMaterialRequirement {
+  itemId: number | string;
+  itemName: string;
+  quantity: number;
 }
 
 export const PROCESSING_RULES: ProcessingRule[] = processingRules as ProcessingRule[];

@@ -5,6 +5,7 @@ import { RECOMMENDATION_LOCALIZATION } from '../stardew/data/recommendationLocal
 import { NPC_GIFT_PREFERENCES, UNIVERSAL_GIFT_PREFERENCES } from '../stardew/data/npcs.ts';
 import { getItemNameById } from '../stardew/data/items.ts';
 import { demoSnapshot } from '../stardew/fixtures/demoSnapshot.ts';
+import { REPRESENTATIVE_FIXTURES } from '../stardew/fixtures/representativeFixtures.ts';
 import { generatePlan } from '../stardew/planner/generatePlan.ts';
 import {
   localizeCommunityCenterBundleName,
@@ -66,6 +67,220 @@ test('localizes community center detail names to English', () => {
   assert.equal(localizeCommunityCenterItemName(24, '防风草', 'zh-CN'), '防风草');
 });
 
+test('localizes zone-specific planting recommendations to English', () => {
+  const localized = localizeRecommendationItem({
+    id: 'plant-greenhouse-blueberry',
+    title: '温室可以种植蓝莓',
+    category: 'profit',
+    priority: 'optional',
+    confidence: 'medium',
+    reason: '温室不受当前季节限制，蓝莓需要13天成熟。',
+    evidence: [
+      { source: 'save', label: '推荐地块', value: '温室' },
+      { source: 'derived', label: '可用空地', value: '温室已耕空地 8 块' },
+      { source: 'save', label: '洒水条件', value: '温室检测到洒水器 2 个' },
+    ],
+    uncertainty: ['温室洒水覆盖未解析。'],
+  }, 'en-US');
+
+  const text = JSON.stringify(localized);
+  assert.equal(localized.title, 'Plant Blueberry in the greenhouse');
+  assert.match(text, /Greenhouse/);
+  assert.doesNotMatch(text, /温室|蓝莓|洒水/);
+});
+
+test('localizes grouped greenhouse planting recommendation and nested details to English', () => {
+  const item: RecommendationItem = {
+    id: 'plant-greenhouse-summary',
+    title: '温室种植建议',
+    category: 'profit',
+    priority: 'optional',
+    confidence: 'medium',
+    reason: '温室不受当前季节限制，当前有 2 项可种作物建议；可点开详情按收益、已有种子和材料情况选择。',
+    evidence: [
+      { source: 'derived', label: '推荐地块', value: '温室' },
+      { source: 'derived', label: '推荐数量', value: '2 项' },
+      { source: 'derived', label: '可用空地', value: '温室已耕空地 8 块' },
+      { source: 'save', label: '洒水条件', value: '温室检测到洒水器 2 个' },
+    ],
+    uncertainty: ['温室洒水覆盖未解析。'],
+    detail: {
+      greenhousePlantingActions: [
+        {
+          id: 'plant-greenhouse-blueberry',
+          title: '温室可以种植蓝莓',
+          category: 'profit',
+          priority: 'optional',
+          confidence: 'medium',
+          reason: '温室不受当前季节限制，蓝莓需要13天成熟。',
+          evidence: [
+            { source: 'save', label: '推荐地块', value: '温室' },
+            { source: 'derived', label: '可用空地', value: '温室已耕空地 8 块' },
+          ],
+          uncertainty: ['温室洒水覆盖未解析。'],
+        },
+      ],
+    },
+  };
+  const localized = localizeRecommendationItem(item, 'en-US');
+  const localizedTwice = localizeRecommendationItem(localized, 'en-US');
+
+  const text = JSON.stringify(localized);
+  assert.equal(localized.title, 'Review greenhouse planting options');
+  assert.match(localized.reason, /greenhouse is not limited/);
+  assert.equal(localized.evidence[1]?.label, 'Recommended Count');
+  assert.equal(localized.evidence[1]?.value, '2 options');
+  assert.equal(localized.detail?.greenhousePlantingActions?.[0]?.title, 'Plant Blueberry in the greenhouse');
+  assert.equal(localizedTwice.detail?.greenhousePlantingActions?.[0]?.title, 'Plant Blueberry in the greenhouse');
+  assert.doesNotMatch(text, /[\u4e00-\u9fff]/);
+});
+
+test('localizes grouped ginger island farm planting recommendation and nested details to English', () => {
+  const localized = localizeRecommendationItem({
+    id: 'plant-ginger-island-farm-summary',
+    title: '姜岛农场种植建议',
+    category: 'profit',
+    priority: 'optional',
+    confidence: 'medium',
+    reason: '姜岛农场不受当前季节限制，当前有 2 项可种作物建议；可点开详情按收益、已有种子和材料情况选择。',
+    evidence: [
+      { source: 'derived', label: '推荐地块', value: '姜岛农场' },
+      { source: 'derived', label: '推荐数量', value: '2 项' },
+      { source: 'derived', label: '可用空地', value: '姜岛农场已耕空地 12 块' },
+      { source: 'save', label: '洒水条件', value: '姜岛农场检测到洒水器 3 个' },
+    ],
+    uncertainty: ['姜岛农场洒水覆盖未解析。'],
+    detail: {
+      plantingActions: [
+        {
+          id: 'plant-ginger-island-farm-blueberry',
+          title: '姜岛农场可以种植蓝莓',
+          category: 'profit',
+          priority: 'optional',
+          confidence: 'medium',
+          reason: '姜岛农场不受当前季节限制，蓝莓需要13天成熟。',
+          evidence: [
+            { source: 'save', label: '推荐地块', value: '姜岛农场' },
+            { source: 'derived', label: '可用空地', value: '姜岛农场已耕空地 12 块' },
+          ],
+          uncertainty: ['姜岛农场洒水覆盖未解析。'],
+        },
+      ],
+    },
+  }, 'en-US');
+
+  const text = JSON.stringify(localized);
+  assert.equal(localized.title, 'Review Ginger Island farm planting options');
+  assert.match(localized.reason, /Ginger Island farm is not limited/);
+  assert.equal(localized.evidence[1]?.label, 'Recommended Count');
+  assert.equal(localized.evidence[1]?.value, '2 options');
+  assert.equal(localized.detail?.plantingActions?.[0]?.title, 'Plant Blueberry on the Ginger Island farm');
+  assert.doesNotMatch(text, /[\u4e00-\u9fff]/);
+});
+
+test('localizes grouped action recommendation details to English', () => {
+  const items: RecommendationItem[] = [
+    {
+      id: 'process-summary',
+      title: '加工建议',
+      category: 'profit',
+      priority: 'recommended',
+      confidence: 'medium',
+      reason: '当前有多项可安排的加工建议；可点开详情按设备、原料、机器状态和收益预估选择。',
+      evidence: [
+        { source: 'derived', label: '推荐数量', value: '2 项' },
+      ],
+      uncertainty: ['机器状态未解析，无法确认当前设备是否空闲。'],
+      detail: {
+        recommendationActions: [
+          {
+            id: 'process-keg',
+            title: '使用小桶酿造高价值作物',
+            category: 'profit',
+            priority: 'recommended',
+            confidence: 'medium',
+            reason: '库存中存在小桶和可加工作物，酿造可提升收益。',
+            evidence: [
+              { source: 'save', label: '加工设备', value: '小桶 x2（储物箱）' },
+              { source: 'save', label: '可加工原料', value: '蓝莓 x8（储物箱）' },
+            ],
+            uncertainty: ['机器状态未解析，无法确认当前设备是否空闲。'],
+          },
+        ],
+      },
+    },
+    {
+      id: 'complete-machine-summary',
+      title: '补齐加工设备建议',
+      category: 'progress',
+      priority: 'recommended',
+      confidence: 'medium',
+      reason: '当前有多项加工设备可补齐；可点开详情按已有原料、配方状态、材料缺口和优先级选择。',
+      evidence: [
+        { source: 'derived', label: '推荐数量', value: '2 项' },
+      ],
+      uncertainty: ['配方解锁状态、制作材料缺口和可购买状态尚未逐项解析。'],
+      detail: {
+        recommendationActions: [
+          {
+            id: 'complete-machine-keg',
+            title: '补齐小桶',
+            category: 'progress',
+            priority: 'recommended',
+            confidence: 'medium',
+            reason: '库存中已有可加工原料，但未识别到小桶。',
+            evidence: [
+              { source: 'static_data', label: '缺少设备', value: '小桶' },
+              { source: 'save', label: '可加工原料', value: '蓝莓 x20（储物箱）' },
+            ],
+            uncertainty: ['制作材料缺口和可购买状态尚未逐项解析。'],
+          },
+        ],
+      },
+    },
+    {
+      id: 'upgrade-tool-summary',
+      title: '工具升级建议',
+      category: 'progress',
+      priority: 'recommended',
+      confidence: 'medium',
+      reason: '当前有多项工具可升级；可点开详情按短期需求、铁匠铺状态、材料和金币选择交付顺序。',
+      evidence: [
+        { source: 'derived', label: '推荐数量', value: '2 项' },
+      ],
+      uncertainty: ['铁匠铺占用状态尚未从存档稳定解析，交付前请按游戏内确认。'],
+      detail: {
+        recommendationActions: [
+          {
+            id: 'upgrade-pickaxe-copper',
+            title: '升级铜十字镐',
+            category: 'progress',
+            priority: 'recommended',
+            confidence: 'medium',
+            reason: '当前十字镐仍是基础等级，且金币和铜锭足够。',
+            evidence: [
+              { source: 'save', label: '当前装备', value: 'Pickaxe' },
+              { source: 'static_data', label: '下一等级', value: '铜十字镐' },
+            ],
+            uncertainty: ['铁匠铺是否正在处理其他工具尚未解析，交付前请确认当天不急需十字镐。'],
+          },
+        ],
+      },
+    },
+  ];
+
+  const localized = items.map((item) => localizeRecommendationItem(item, 'en-US'));
+  const text = JSON.stringify(localized);
+
+  assert.equal(localized[0]?.title, 'Review processing suggestions');
+  assert.equal(localized[0]?.detail?.recommendationActions?.[0]?.title, 'Use kegs for artisan goods');
+  assert.equal(localized[1]?.title, 'Review missing machine suggestions');
+  assert.equal(localized[1]?.detail?.recommendationActions?.[0]?.title, 'Get or craft Keg');
+  assert.equal(localized[2]?.title, 'Review tool upgrade suggestions');
+  assert.equal(localized[2]?.detail?.recommendationActions?.[0]?.title, 'Upgrade to a Copper Pickaxe');
+  assert.doesNotMatch(text, /[\u4e00-\u9fff]/);
+});
+
 test('localizes birthday recommendations without claiming the gift is always loved', () => {
   const localized = localizeRecommendationItem({
     id: 'birthday-sebastian',
@@ -109,6 +324,12 @@ test('localizes Chinese birthday gift item names to English by item id', () => {
       reason: item.reason,
       evidence: item.evidence,
       uncertainty: item.uncertainty,
+      detail: item.detail?.recommendationActions?.map((action) => ({
+        title: action.title,
+        reason: action.reason,
+        evidence: action.evidence,
+        uncertainty: action.uncertainty,
+      })),
     }))
     .join('\n');
 
@@ -141,6 +362,12 @@ test('localizes birthday gift names that only exist in external text translation
       reason: item.reason,
       evidence: item.evidence,
       uncertainty: item.uncertainty,
+      detail: item.detail?.recommendationActions?.map((action) => ({
+        title: action.title,
+        reason: action.reason,
+        evidence: action.evidence,
+        uncertainty: action.uncertainty,
+      })),
     }))
     .join('\n');
 
@@ -358,6 +585,88 @@ test('localizes English item names through the item catalog when Chinese recomme
   assert.match(text, /铁锭 x3/);
   assert.match(text, /矿工点心 x1/);
   assert.doesNotMatch(text, /\b(Copper Bar|Iron Bar|Miner's Treat)\b/);
+});
+
+test('localizes parsed crafting and blacksmith statuses in English recommendations', () => {
+  const plan = generatePlan({
+    goal: 'money',
+    manualCorrections: { giftedToday: false, harvestedToday: false, wateredToday: false },
+    planDate: { year: 2, season: 'summer', day: 15, sourceSaveDate: { year: 2, season: 'summer', day: 15 } },
+    selectedWeather: 'sunny',
+    snapshot: {
+      ...demoSnapshot,
+      crops: [],
+      crafting: {
+        parsed: true,
+        unlockedRecipeIds: ['keg'],
+      },
+      blacksmith: {
+        parsed: true,
+      },
+      wallet: { money: 4500 },
+      player: {
+        ...demoSnapshot.player,
+        maxItems: 36,
+        equipment: {
+          ...demoSnapshot.player.equipment,
+          pickaxeName: 'Pickaxe',
+        },
+      },
+      inventory: [
+        { id: 258, name: 'Blueberry', stack: 20, source: 'chest', sourceLabel: '储物箱' },
+        { id: 334, name: 'Copper Bar', stack: 5, source: 'chest', sourceLabel: '储物箱' },
+      ],
+    },
+  });
+
+  const localizedText = plan.actions
+    .map((item) => localizeRecommendationItem(item, 'en-US'))
+    .map((item) => JSON.stringify({
+      title: item.title,
+      reason: item.reason,
+      evidence: item.evidence,
+      uncertainty: item.uncertainty,
+      detail: item.detail?.recommendationActions?.map((action) => ({
+        title: action.title,
+        reason: action.reason,
+        evidence: action.evidence,
+        uncertainty: action.uncertainty,
+      })),
+    }))
+    .join('\n');
+
+  assert.match(localizedText, /Recipe unlocked/);
+  assert.match(localizedText, /missing materials/);
+  assert.match(localizedText, /No tool currently being upgraded/);
+  assert.doesNotMatch(localizedText, /[\u4e00-\u9fff]/);
+});
+
+test('representative fixtures do not leak Chinese in English recommendation output', () => {
+  const leaked = REPRESENTATIVE_FIXTURES.flatMap((fixture) => {
+    const plan = generatePlan({
+      goal: 'free',
+      manualCorrections: { giftedToday: false, harvestedToday: false, wateredToday: false },
+      planDate: { ...fixture.snapshot.time, sourceSaveDate: fixture.snapshot.time },
+      selectedWeather: fixture.snapshot.weatherForTomorrow ?? 'sunny',
+      snapshot: fixture.snapshot,
+    });
+
+    const text = [...plan.reminders, ...plan.actions]
+      .map((item) => localizeRecommendationItem(item, 'en-US'))
+      .map((item) => JSON.stringify({
+        id: item.id,
+        title: item.title,
+        reason: item.reason,
+        evidence: item.evidence,
+        uncertainty: item.uncertainty,
+        estimate: item.estimate?.description,
+      }))
+      .join('\n');
+
+    return /[\u4e00-\u9fff]/.test(text) ? [fixture.id] : [];
+  });
+
+  assert.deepEqual(leaked, []);
 });
 
 test('localizes new collection and animal feed recommendation text to English', () => {
@@ -762,16 +1071,22 @@ test('localizes missing processing machine evidence to English without mixed ite
     },
   });
 
-  const localizedText = plan.actions
-    .filter((item) => item.id.startsWith('complete-machine-'))
-    .map((item) => localizeRecommendationItem(item, 'en-US'))
-    .map((item) => JSON.stringify({
+  const localized = localizeRecommendationItem(
+    plan.actions.find((item) => item.id === 'complete-machine-summary') ?? plan.actions.find((item) => item.id.startsWith('complete-machine-'))!,
+    'en-US',
+  );
+  const localizedText = JSON.stringify({
+    title: localized.title,
+    reason: localized.reason,
+    evidence: localized.evidence,
+    uncertainty: localized.uncertainty,
+    detail: localized.detail?.recommendationActions?.map((item) => ({
       title: item.title,
       reason: item.reason,
       evidence: item.evidence,
       uncertainty: item.uncertainty,
-    }))
-    .join('\n');
+    })),
+  });
 
   assert.match(localizedText, /Get or craft Preserves Jar/);
   assert.match(localizedText, /Perch Roe x2\(Backpack\)/);

@@ -35,6 +35,7 @@ export interface StardewSaveSnapshot {
   parseMeta: ParseMeta;
   farm: FarmSummary;
   farmPlotSummary?: FarmPlotSummary;
+  plantingZones?: PlantingZoneSummary[];
   player: PlayerSummary;
   time: SaveTime;
   weatherForTomorrow?: Weather;
@@ -43,10 +44,39 @@ export interface StardewSaveSnapshot {
   inventory: InventoryItem[];
   crops: CropSummary[];
   readyMachineOutputs: ProducedItemSummary[];
+  machineStates?: MachineStateSummary[];
   animalProducts: ProducedItemSummary[];
   animalFeed: AnimalFeedSummary;
+  crafting?: CraftingSummary;
+  blacksmith?: BlacksmithSummary;
   progression: ProgressionSummary;
   relationships: RelationshipSummary[];
+}
+
+export interface CraftingSummary {
+  parsed: boolean;
+  unlockedRecipeIds?: string[];
+}
+
+export interface BlacksmithSummary {
+  parsed: boolean;
+  toolInProgress?: string;
+  daysUntilReady?: number;
+}
+
+export type MachineStateKind = 'ready' | 'processing' | 'idle' | 'unknown';
+
+export interface MachineStateSummary {
+  machineId?: number | string;
+  machineName: string;
+  location?: string;
+  tileKey?: string;
+  state: MachineStateKind;
+  output?: ProducedItemSummary;
+  heldObjectId?: number | string;
+  minutesUntilReady?: number;
+  parseConfidence: Confidence;
+  unknownFields: string[];
 }
 
 export interface FarmPlotSummary {
@@ -60,6 +90,30 @@ export interface FarmPlotSummary {
    * This does not mean every farmable tile on the map is empty.
    */
   emptyTileCount?: number;
+  sprinklerCount?: number;
+  sprinklerCoverageParsed?: boolean;
+  wateredTileCount?: number;
+  parsedFields: string[];
+  unknownFields: string[];
+}
+
+export type PlantingZone = 'farm' | 'greenhouse' | 'ginger_island_farm';
+
+export type PlantingZoneUnlockState = 'unlocked' | 'locked' | 'unknown';
+
+export interface PlantingZoneSummary {
+  zone: PlantingZone;
+  unlockState: PlantingZoneUnlockState;
+  usable?: boolean;
+  plantedCropCount?: number;
+  matureCropCount?: number;
+  tilledTileCount?: number;
+  emptyTilledTileCount?: number;
+  occupiedObjectCount?: number;
+  resourceClumpCount?: number;
+  buildingCount?: number;
+  sprinklerCount?: number;
+  sprinklerCoverageParsed?: boolean;
   parsedFields: string[];
   unknownFields: string[];
 }
@@ -234,6 +288,9 @@ export interface RecommendationItem {
 
 export interface RecommendationDetail {
   communityCenterDeliverables?: CommunityCenterDeliverableDetail[];
+  greenhousePlantingActions?: RecommendationItem[];
+  plantingActions?: RecommendationItem[];
+  recommendationActions?: RecommendationItem[];
   producedItems?: ProducedItemDetail[];
 }
 

@@ -135,6 +135,49 @@ test('localizes grouped greenhouse planting recommendation and nested details to
   assert.doesNotMatch(text, /[\u4e00-\u9fff]/);
 });
 
+test('localizes grouped ordinary farm planting recommendation and nested details to English', () => {
+  const localized = localizeRecommendationItem({
+    id: 'plant-farm-summary',
+    title: '普通农场种植建议',
+    category: 'profit',
+    priority: 'optional',
+    confidence: 'medium',
+    reason: '普通农场当前有 2 项可种作物建议；可点开详情按收益、已有种子和材料情况选择。',
+    evidence: [
+      { source: 'derived', label: '推荐地块', value: '普通农场' },
+      { source: 'derived', label: '推荐数量', value: '2 项' },
+      { source: 'derived', label: '可用空地', value: '已耕空地 12 块' },
+      { source: 'save', label: '洒水条件', value: '检测到洒水器 2 个' },
+    ],
+    uncertainty: ['未解析洒水覆盖。'],
+    detail: {
+      plantingActions: [
+        {
+          id: 'plant-parsnip',
+          title: '普通农场可以种植防风草',
+          category: 'profit',
+          priority: 'optional',
+          confidence: 'medium',
+          reason: '防风草需要4天成熟，今天种下仍可在本季结束前成熟。',
+          evidence: [
+            { source: 'save', label: '推荐地块', value: '普通农场' },
+            { source: 'derived', label: '可用空地', value: '已耕空地 12 块' },
+          ],
+          uncertainty: ['未解析洒水覆盖。'],
+        },
+      ],
+    },
+  }, 'en-US');
+
+  const text = JSON.stringify(localized);
+  assert.equal(localized.title, 'Review farm planting options');
+  assert.match(localized.reason, /farm has 2 crop options available/);
+  assert.equal(localized.evidence[1]?.label, 'Recommended Count');
+  assert.equal(localized.evidence[1]?.value, '2 options');
+  assert.equal(localized.detail?.plantingActions?.[0]?.title, 'Plant Parsnip on the farm');
+  assert.doesNotMatch(text, /[\u4e00-\u9fff]/);
+});
+
 test('localizes grouped ginger island farm planting recommendation and nested details to English', () => {
   const localized = localizeRecommendationItem({
     id: 'plant-ginger-island-farm-summary',

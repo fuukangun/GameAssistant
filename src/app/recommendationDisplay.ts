@@ -200,10 +200,20 @@ function getDynamicRecommendationText(item: RecommendationItem): Partial<Recomme
     };
   }
 
-  if (item.id === 'plant-greenhouse-summary' || item.id === 'plant-ginger-island-farm-summary') {
+  if (item.id === 'plant-farm-summary' || item.id === 'plant-greenhouse-summary' || item.id === 'plant-ginger-island-farm-summary') {
     const zoneName = item.evidence.find((evidence) => evidence.label === '推荐地块')?.value ?? '温室';
     const localizedZone = localizePlantingZoneName(zoneName);
     const count = item.evidence.find((evidence) => evidence.label === '推荐数量')?.value.match(/\d+/)?.[0];
+    if (zoneName === '普通农场') {
+      return {
+        title: `Review ${formatPlantingZoneLabelForSentence(localizedZone)} planting options`,
+        reason: count
+          ? `The farm has ${count} crop options available for the current season; open details to compare them by profit, owned seeds, and plot conditions.`
+          : 'The farm has crop options available for the current season; open details to compare them by profit, owned seeds, and plot conditions.',
+        uncertainty: localizeUncertaintyList(item.uncertainty),
+      };
+    }
+
     return {
       title: `Review ${formatPlantingZoneLabelForSentence(localizedZone)} planting options`,
       reason: count
@@ -735,6 +745,9 @@ function localizePlantingZoneName(value: string): string {
 }
 
 function formatPlantingZoneLabelForSentence(value: string): string {
+  if (value === 'Farm') {
+    return 'farm';
+  }
   if (value === 'Greenhouse') {
     return 'greenhouse';
   }
@@ -769,6 +782,10 @@ function localizeWateringEvidence(value: string): string {
   const zoneCoverageMatch = value.match(/^(温室|姜岛农场)洒水覆盖已解析$/u);
   if (zoneCoverageMatch) {
     return `${localizePlantingZoneName(zoneCoverageMatch[1])} sprinkler coverage parsed`;
+  }
+  const farmSprinklerMatch = value.match(/^检测到洒水器 (\d+) 个$/u);
+  if (farmSprinklerMatch) {
+    return `Sprinklers detected: ${farmSprinklerMatch[1]}`;
   }
 
   return localizeEvidenceValue(value);

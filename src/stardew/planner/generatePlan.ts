@@ -501,17 +501,18 @@ function formatProducedItemSourceName(sourceName: string): string {
 }
 
 function buildPlantingActions(input: PlannerInput): RecommendationItem[] {
+  const farmActions = buildZonePlantingActions(input, 'farm');
   const greenhouseActions = buildZonePlantingActions(input, 'greenhouse');
   const gingerIslandFarmActions = buildZonePlantingActions(input, 'ginger_island_farm');
 
   return [
-    ...buildZonePlantingActions(input, 'farm'),
-    ...groupSpecialPlantingActions(greenhouseActions, 'greenhouse'),
-    ...groupSpecialPlantingActions(gingerIslandFarmActions, 'ginger_island_farm'),
+    ...groupPlantingActions(farmActions, 'farm'),
+    ...groupPlantingActions(greenhouseActions, 'greenhouse'),
+    ...groupPlantingActions(gingerIslandFarmActions, 'ginger_island_farm'),
   ];
 }
 
-function groupSpecialPlantingActions(actions: RecommendationItem[], zone: Exclude<PlantingZone, 'farm'>): RecommendationItem[] {
+function groupPlantingActions(actions: RecommendationItem[], zone: PlantingZone): RecommendationItem[] {
   if (actions.length <= 1) {
     return actions;
   }
@@ -531,7 +532,9 @@ function groupSpecialPlantingActions(actions: RecommendationItem[], zone: Exclud
     category: 'profit',
     priority: getHighestPriority(actions),
     confidence: getLowestConfidence(actions),
-    reason: `${zoneName}不受当前季节限制，当前有 ${actions.length} 项可种作物建议；可点开详情按收益、已有种子和材料情况选择。`,
+    reason: zone === 'farm'
+      ? `${zoneName}当前有 ${actions.length} 项可种作物建议；可点开详情按收益、已有种子和材料情况选择。`
+      : `${zoneName}不受当前季节限制，当前有 ${actions.length} 项可种作物建议；可点开详情按收益、已有种子和材料情况选择。`,
     evidence: [
       { source: 'derived', label: '推荐地块', value: zoneName },
       { source: 'derived', label: '推荐数量', value: `${actions.length} 项` },
@@ -742,6 +745,10 @@ function canUsePlantingZone(zoneSummary: PlantingZoneSummary | undefined): boole
 }
 
 function formatPlantingActionId(zone: PlantingZone, cropId: string): string {
+  if (zone === 'farm' && cropId === 'summary') {
+    return 'plant-farm-summary';
+  }
+
   if (zone === 'farm') {
     return `plant-${cropId}`;
   }

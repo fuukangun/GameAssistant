@@ -73,6 +73,12 @@ function findAction(plan: ReturnType<typeof generatePlan>, id: string) {
   return plan.actions.find((item) => item.id === id)
     ?? plan.actions
       .flatMap((item) => item.detail?.recommendationActions ?? [])
+      .find((item) => item.id === id)
+    ?? plan.actions
+      .flatMap((item) => item.detail?.plantingActions ?? [])
+      .find((item) => item.id === id)
+    ?? plan.actions
+      .flatMap((item) => item.detail?.greenhousePlantingActions ?? [])
       .find((item) => item.id === id);
 }
 
@@ -364,7 +370,7 @@ test('recommends planting crops when they can mature before season end', () => {
     }),
   }));
 
-  const planting = plan.actions.find((item) => item.id === 'plant-parsnip');
+  const planting = findAction(plan, 'plant-parsnip');
   assert.equal(planting?.priority, 'optional');
   assert.match(planting?.reason ?? '', /成熟/);
 });
@@ -382,7 +388,7 @@ test('describes seed source when matching seeds are already in global inventory'
     }),
   }));
 
-  const planting = plan.actions.find((item) => item.id === 'plant-parsnip');
+  const planting = findAction(plan, 'plant-parsnip');
   assert.equal(planting?.evidence.find((item) => item.label === '已有种子')?.value, '防风草种子 x12（储物箱）');
   assert.equal(planting?.uncertainty.some((item) => item.includes('是否已拥有种子')), false);
 });
@@ -400,7 +406,7 @@ test('localizes English seed names in Chinese planting evidence', () => {
     }),
   }));
 
-  const planting = plan.actions.find((item) => item.id === 'plant-parsnip');
+  const planting = findAction(plan, 'plant-parsnip');
   const seedEvidence = planting?.evidence.find((item) => item.label === '已有种子')?.value;
 
   assert.equal(seedEvidence, '防风草种子 x12（储物箱）');
@@ -432,7 +438,7 @@ test('raises planting confidence when seed, empty plots, shop, and sprinkler cov
     }),
   }));
 
-  const planting = plan.actions.find((item) => item.id === 'plant-parsnip');
+  const planting = findAction(plan, 'plant-parsnip');
 
   assert.equal(planting?.confidence, 'high');
   assert.equal(planting?.evidence.find((item) => item.label === '商店')?.value, '皮埃尔：周三休息；Joja：通常开放');
@@ -466,7 +472,7 @@ test('keeps planting confidence medium when sprinklers exist but coverage is unp
     }),
   }));
 
-  const planting = plan.actions.find((item) => item.id === 'plant-parsnip');
+  const planting = findAction(plan, 'plant-parsnip');
 
   assert.equal(planting?.confidence, 'medium');
   assert.equal(planting?.evidence.find((item) => item.label === '洒水条件')?.value, '检测到洒水器 1 个');
@@ -497,7 +503,7 @@ test('does not treat inventory sprinklers as parsed plot coverage', () => {
     }),
   }));
 
-  const planting = plan.actions.find((item) => item.id === 'plant-parsnip');
+  const planting = findAction(plan, 'plant-parsnip');
 
   assert.equal(planting?.confidence, 'medium');
   assert.equal(planting?.evidence.find((item) => item.label === '洒水条件')?.value, '库存有洒水器，未确认覆盖地块');
@@ -514,7 +520,7 @@ test('uses conservative multi-harvest ROI for regrow crop planting estimates', (
     }),
   }));
 
-  const planting = plan.actions.find((item) => item.id === 'plant-blueberry');
+  const planting = findAction(plan, 'plant-blueberry');
   assert.equal(planting?.estimate?.gold, 120);
   assert.equal(planting?.estimate?.description, '保守预计利润约120金');
   assert.equal(planting?.evidence.find((item) => item.label === '预计收获次数')?.value, '4次');
@@ -636,6 +642,46 @@ test('groups greenhouse planting actions into a single detail card', () => {
   assert.equal(greenhouse?.evidence.find((item) => item.label === '洒水条件')?.value, '温室检测到洒水器 2 个');
   assert.equal(greenhouseDetails.length > 1, true);
   assert.equal(greenhouseDetails.some((item) => item.id === 'plant-greenhouse-blueberry'), true);
+});
+
+test('groups ordinary farm planting actions into a single detail card', () => {
+  const plan = generatePlan(input({
+    planDate: { year: 1, season: 'spring', day: 5, sourceSaveDate: { year: 1, season: 'spring', day: 5 } },
+    snapshot: baseSnapshot({
+      time: { year: 1, season: 'spring', day: 5 },
+      wallet: { money: 5000 },
+      crops: [],
+      inventory: [
+        { id: 472, name: 'Parsnip Seeds', stack: 8, source: 'chest', sourceLabel: '储物箱' },
+      ],
+      farmPlotSummary: {
+        plantedCropCount: 0,
+        tilledTileCount: 16,
+        emptyTileCount: 12,
+        occupiedObjectCount: 0,
+        resourceClumpCount: 0,
+        buildingCount: 0,
+        sprinklerCount: 2,
+        sprinklerCoverageParsed: false,
+        parsedFields: ['locations.GameLocation[name=Farm].terrainFeatures', 'locations.GameLocation[name=Farm].objects'],
+        unknownFields: ['sprinklerCoverage'],
+      },
+    }),
+  }));
+
+  const farm = plan.actions.find((item) => item.id === 'plant-farm-summary');
+  const farmDetails = farm?.detail?.plantingActions ?? [];
+
+  assert.equal(plan.actions.some((item) => item.id.startsWith('plant-') && item.id !== 'plant-farm-summary' && item.id !== 'plant-greenhouse-summary' && item.id !== 'plant-ginger-island-farm-summary'), false);
+  assert.equal(farm?.title, '普通农场种植建议');
+  assert.equal(farm?.priority, 'optional');
+  assert.equal(farm?.confidence, 'medium');
+  assert.equal(farm?.evidence.find((item) => item.label === '推荐地块')?.value, '普通农场');
+  assert.equal(farm?.evidence.find((item) => item.label === '推荐数量')?.value, `${farmDetails.length} 项`);
+  assert.equal(farm?.evidence.find((item) => item.label === '可用空地')?.value, '已耕空地 12 块');
+  assert.equal(farm?.evidence.find((item) => item.label === '洒水条件')?.value, '检测到洒水器 2 个');
+  assert.equal(farmDetails.length > 1, true);
+  assert.equal(farmDetails.some((item) => item.id === 'plant-parsnip'), true);
 });
 
 test('does not recommend greenhouse planting when greenhouse status is unknown', () => {

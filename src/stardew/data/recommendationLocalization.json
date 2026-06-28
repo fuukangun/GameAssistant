@@ -20,6 +20,12 @@
     "库存物品": "Inventory Item",
     "基础售价估算": "Base Price Estimate",
     "生长天数": "Growth Days",
+    "推荐地块": "Planting Zone",
+    "推荐数量": "Recommended Count",
+    "加工建议数量": "Processing Suggestions",
+    "补齐设备建议数量": "Missing Machine Suggestions",
+    "工具升级建议数量": "Tool Upgrade Suggestions",
+    "地块状态": "Zone Status",
     "可生长天数": "Growable Days",
     "当前金币": "Current Gold",
     "商店": "Shop",
@@ -82,7 +88,9 @@
     "铁匠铺占用状态尚未从存档稳定解析，交付前请按游戏内确认。": "Blacksmith occupancy is not parsed from the save yet. Confirm in-game before handing in a tool.",
     "未解析农场杂物、箱子内容和工具位置，因此只作为兜底建议。": "Farm debris, chest organization, and tool locations are not parsed, so this is only a fallback suggestion.",
     "未解析是否已拥有种子、洒水覆盖。": "Owned seeds and sprinkler coverage are not parsed.",
-    "未解析洒水覆盖。": "Sprinkler coverage is not parsed."
+    "未解析洒水覆盖。": "Sprinkler coverage is not parsed.",
+    "温室洒水覆盖未解析。": "Greenhouse sprinkler coverage is not parsed.",
+    "姜岛农场洒水覆盖未解析。": "Ginger Island farm sprinkler coverage is not parsed."
   },
   "festivalNames": {
     "月光水母之舞": "Dance of the Moonlight Jellies"
@@ -108,6 +116,10 @@
     "苋菜": "Amaranth"
   },
   "generalItemNames": {
+    "普通农场": "Farm",
+    "温室": "Greenhouse",
+    "姜岛农场": "Ginger Island Farm",
+    "洒水器": "Sprinkler",
     "紫水晶": "Amethyst",
     "钻石": "Diamond",
     "石英": "Quartz",

@@ -1,4 +1,4 @@
-import type { InventoryItem, MachineStateSummary, PlannerInput, PlanRecommendation, ProducedItemSummary, RecommendationItem, SaveTime, Season } from '../../shared/types.ts';
+import type { InventoryItem, MachineStateSummary, PlannerInput, PlanRecommendation, PlantingZone, PlantingZoneSummary, ProducedItemSummary, RecommendationItem, SaveTime, Season } from '../../shared/types.ts';
 import { BIRTHDAYS, FESTIVALS } from '../data/calendar.ts';
 import { createCommunityCenterSummary } from '../data/communityCenter.ts';
 import { BASIC_PLANTING_OPTIONS, calculateConservativeCropRoi } from '../data/crops.ts';
@@ -22,7 +22,7 @@ export function generatePlan(input: PlannerInput): PlanRecommendation {
     ...buildAnimalFeedReminders(input),
     ...buildWeatherReminders(input),
   ];
-  const actions: RecommendationItem[] = [
+  const actions: RecommendationItem[] = groupSummaryRecommendationActions([
     ...buildHarvestActions(input),
     ...buildPlantingActions(input),
     ...buildFishingActions(input),
@@ -32,7 +32,7 @@ export function generatePlan(input: PlannerInput): PlanRecommendation {
     ...buildUpgradeActions(input),
     ...buildJojaActions(input),
     ...buildMaintenanceActions(input),
-  ];
+  ]);
   const sortedActions = sortActions(actions, input.goal);
 
   return {
@@ -43,6 +43,81 @@ export function generatePlan(input: PlannerInput): PlanRecommendation {
     actions: sortedActions,
     parseWarnings: input.snapshot.parseMeta.warnings,
   };
+}
+
+function groupSummaryRecommendationActions(actions: RecommendationItem[]): RecommendationItem[] {
+  return [
+    ...actions.filter((item) => !isGroupedRecommendationAction(item)),
+    ...createRecommendationActionGroup(actions.filter((item) => item.id.startsWith('process-')), {
+      id: 'process-summary',
+      title: '加工建议',
+      reason: '当前有多项可安排的加工建议；可点开详情按设备、原料、机器状态和收益预估选择。',
+      evidenceLabel: '加工建议数量',
+      category: 'profit',
+    }),
+    ...createRecommendationActionGroup(actions.filter((item) => item.id.startsWith('complete-machine-')), {
+      id: 'complete-machine-summary',
+      title: '补齐加工设备建议',
+      reason: '当前有多项加工设备可补齐；可点开详情按已有原料、配方状态、材料缺口和优先级选择。',
+      evidenceLabel: '补齐设备建议数量',
+      category: 'progress',
+    }),
+    ...createRecommendationActionGroup(actions.filter(isToolUpgradeRecommendationAction), {
+      id: 'upgrade-tool-summary',
+      title: '工具升级建议',
+      reason: '当前有多项工具可升级；可点开详情按短期需求、铁匠铺状态、材料和金币选择交付顺序。',
+      evidenceLabel: '工具升级建议数量',
+      category: 'progress',
+    }),
+  ];
+}
+
+function isGroupedRecommendationAction(item: RecommendationItem): boolean {
+  return item.id.startsWith('process-')
+    || item.id.startsWith('complete-machine-')
+    || isToolUpgradeRecommendationAction(item);
+}
+
+function isToolUpgradeRecommendationAction(item: RecommendationItem): boolean {
+  return /^upgrade-(pickaxe|axe|watering-can|hoe)-/.test(item.id);
+}
+
+function createRecommendationActionGroup(
+  items: RecommendationItem[],
+  options: {
+    id: string;
+    title: string;
+    reason: string;
+    evidenceLabel: string;
+    category: RecommendationItem['category'];
+  },
+): RecommendationItem[] {
+  if (items.length <= 1) {
+    return items;
+  }
+
+  const bestEstimate = items
+    .map((item) => item.estimate)
+    .filter((estimate): estimate is NonNullable<RecommendationItem['estimate']> => estimate !== undefined)
+    .sort((left, right) => estimateValue(right) - estimateValue(left))[0];
+
+  return [{
+    id: options.id,
+    title: options.title,
+    category: options.category,
+    priority: getHighestPriority(items),
+    confidence: getLowestConfidence(items),
+    reason: options.reason,
+    evidence: [
+      { source: 'derived', label: '推荐数量', value: `${items.length} 项` },
+      { source: 'derived', label: options.evidenceLabel, value: `${items.length} 项` },
+    ],
+    uncertainty: uniqueStrings(items.flatMap((item) => item.uncertainty)),
+    estimate: bestEstimate,
+    detail: {
+      recommendationActions: items,
+    },
+  }];
 }
 
 function sortActions(actions: RecommendationItem[], goal: PlannerInput['goal']): RecommendationItem[] {
@@ -426,19 +501,101 @@ function formatProducedItemSourceName(sourceName: string): string {
 }
 
 function buildPlantingActions(input: PlannerInput): RecommendationItem[] {
+  const greenhouseActions = buildZonePlantingActions(input, 'greenhouse');
+  const gingerIslandFarmActions = buildZonePlantingActions(input, 'ginger_island_farm');
+
+  return [
+    ...buildZonePlantingActions(input, 'farm'),
+    ...groupSpecialPlantingActions(greenhouseActions, 'greenhouse'),
+    ...groupSpecialPlantingActions(gingerIslandFarmActions, 'ginger_island_farm'),
+  ];
+}
+
+function groupSpecialPlantingActions(actions: RecommendationItem[], zone: Exclude<PlantingZone, 'farm'>): RecommendationItem[] {
+  if (actions.length <= 1) {
+    return actions;
+  }
+
+  const zoneName = formatPlantingZoneName(zone);
+  const firstAction = actions[0];
+  const emptyPlotEvidence = firstAction.evidence.find((item) => item.label === '可用空地');
+  const sprinklerEvidence = firstAction.evidence.find((item) => item.label === '洒水条件');
+  const bestEstimate = actions
+    .map((item) => item.estimate)
+    .filter((estimate): estimate is NonNullable<RecommendationItem['estimate']> => estimate !== undefined)
+    .sort((left, right) => estimateValue(right) - estimateValue(left))[0];
+
+  return [{
+    id: `${formatPlantingActionId(zone, 'summary')}`,
+    title: `${zoneName}种植建议`,
+    category: 'profit',
+    priority: getHighestPriority(actions),
+    confidence: getLowestConfidence(actions),
+    reason: `${zoneName}不受当前季节限制，当前有 ${actions.length} 项可种作物建议；可点开详情按收益、已有种子和材料情况选择。`,
+    evidence: [
+      { source: 'derived', label: '推荐地块', value: zoneName },
+      { source: 'derived', label: '推荐数量', value: `${actions.length} 项` },
+      ...(emptyPlotEvidence ? [emptyPlotEvidence] : []),
+      ...(sprinklerEvidence ? [sprinklerEvidence] : []),
+    ],
+    uncertainty: uniqueStrings(actions.flatMap((item) => item.uncertainty)),
+    estimate: bestEstimate,
+    detail: {
+      plantingActions: actions,
+      greenhousePlantingActions: actions,
+    },
+  }];
+}
+
+function getHighestPriority(items: RecommendationItem[]): RecommendationItem['priority'] {
+  return [...items].sort((left, right) => actionPriorityScore(right) - actionPriorityScore(left))[0]?.priority ?? 'optional';
+}
+
+function getLowestConfidence(items: RecommendationItem[]): RecommendationItem['confidence'] {
+  return [...items].sort((left, right) => confidenceScore(left) - confidenceScore(right))[0]?.confidence ?? 'medium';
+}
+
+function uniqueStrings(items: string[]): string[] {
+  return [...new Set(items)];
+}
+
+function estimateValue(estimate: NonNullable<RecommendationItem['estimate']>): number {
+  return estimate.goldMax ?? estimate.gold ?? estimate.goldMin ?? 0;
+}
+
+function buildZonePlantingActions(input: PlannerInput, zone: PlantingZone): RecommendationItem[] {
+  const zoneSummary = getPlantingZoneSummary(input.snapshot, zone);
+  if (!canUsePlantingZone(zoneSummary)) {
+    return [];
+  }
+
   const growableDaysBeforeSeasonEnd = 28 - input.planDate.day;
   const options = BASIC_PLANTING_OPTIONS.filter((crop) => {
-    return crop.season === input.planDate.season
+    const cropZones = crop.allowedPlantingZones ?? ['farm'];
+    if (!cropZones.includes(zone) || crop.disallowedPlantingZones?.includes(zone)) {
+      return false;
+    }
+
+    if (zone === 'farm') {
+      return (crop.seasons ?? [crop.season]).includes(input.planDate.season)
       && crop.growthDays <= growableDaysBeforeSeasonEnd
+      && input.snapshot.wallet.money >= crop.seedPrice;
+    }
+
+    return (crop.seasons ?? [crop.season]).some((season) => season !== 'winter')
       && input.snapshot.wallet.money >= crop.seedPrice;
   });
 
   return options.map((crop) => {
-    const roi = calculateConservativeCropRoi(crop, input.planDate);
-    const plotStatus = createFarmPlotStatusSummary(input.snapshot);
-    const farmSprinklerCount = input.snapshot.farmPlotSummary?.sprinklerCount;
+    const roi = calculateConservativeCropRoi(crop, zone === 'farm' ? input.planDate : {
+      ...input.planDate,
+      season: crop.seasons?.[0] ?? crop.season,
+      day: 1,
+    });
+    const plotStatus = zone === 'farm' ? createFarmPlotStatusSummary(input.snapshot) : undefined;
+    const farmSprinklerCount = zoneSummary?.sprinklerCount;
     const hasInventorySprinkler = input.snapshot.inventory.some(isSprinklerItem);
-    const hasParsedSprinklerCoverage = input.snapshot.farmPlotSummary?.sprinklerCoverageParsed === true;
+    const hasParsedSprinklerCoverage = zoneSummary?.sprinklerCoverageParsed === true;
     const seed = input.snapshot.inventory.find((item) => {
       const itemId = normalizeItemId(item.id);
       return crop.seedIds.some((seedId) => normalizeItemId(seedId) === itemId)
@@ -446,9 +603,12 @@ function buildPlantingActions(input: PlannerInput): RecommendationItem[] {
         || item.name === crop.seedName;
     });
     const evidence: RecommendationItem['evidence'] = [
+      { source: 'derived', label: '推荐地块', value: formatPlantingZoneName(zone) },
       { source: 'static_data', label: '生长天数', value: `${crop.growthDays}天` },
-      { source: 'derived', label: '可生长天数', value: `${growableDaysBeforeSeasonEnd}天` },
-      { source: 'derived', label: '预计收获次数', value: `${roi.harvests}次` },
+      ...(zone === 'farm'
+        ? [{ source: 'derived' as const, label: '可生长天数', value: `${growableDaysBeforeSeasonEnd}天` }]
+        : [{ source: 'derived' as const, label: '地块状态', value: `${formatPlantingZoneName(zone)}可用` }]),
+      { source: 'derived', label: '预计收获次数', value: formatZoneHarvestCount(crop.regrowDays, roi.harvests, zone) },
       { source: 'save', label: '当前金币', value: `${input.snapshot.wallet.money}金` },
       { source: 'static_data', label: '商店', value: formatShopAvailability(input.planDate, 'zh-CN') },
     ];
@@ -459,20 +619,21 @@ function buildPlantingActions(input: PlannerInput): RecommendationItem[] {
         value: formatInventoryItemStack(seed),
       });
     }
-    if (plotStatus.emptyTilledTileCount !== undefined) {
+    const emptyTilledTileCount = zone === 'farm' ? plotStatus?.emptyTilledTileCount : zoneSummary?.emptyTilledTileCount;
+    if (emptyTilledTileCount !== undefined) {
       evidence.push({
         source: 'derived',
         label: '可用空地',
-        value: `已耕空地 ${plotStatus.emptyTilledTileCount} 块`,
+        value: formatZoneEmptyPlotEvidence(zone, emptyTilledTileCount),
       });
     }
     if (hasParsedSprinklerCoverage) {
       evidence.push({
         source: 'save',
         label: '洒水条件',
-        value: '检测到洒水器',
+        value: zone === 'farm' ? '检测到洒水器' : `${formatPlantingZoneName(zone)}洒水覆盖已解析`,
       });
-    } else if (hasInventorySprinkler) {
+    } else if (zone === 'farm' && hasInventorySprinkler) {
       evidence.push({
         source: 'save',
         label: '洒水条件',
@@ -482,30 +643,35 @@ function buildPlantingActions(input: PlannerInput): RecommendationItem[] {
       evidence.push({
         source: 'save',
         label: '洒水条件',
-        value: `检测到洒水器 ${farmSprinklerCount} 个`,
+        value: zone === 'farm'
+          ? `检测到洒水器 ${farmSprinklerCount} 个`
+          : `${formatPlantingZoneName(zone)}检测到洒水器 ${farmSprinklerCount} 个`,
       });
     }
 
     const uncertainty = buildPlantingUncertainty({
       hasSeed: Boolean(seed),
       hasParsedShop: true,
-      hasParsedEmptyPlots: plotStatus.emptyTilledTileCount !== undefined,
+      hasParsedEmptyPlots: emptyTilledTileCount !== undefined,
       hasParsedSprinkler: hasParsedSprinklerCoverage,
+      zone,
     });
 
     return {
-      id: `plant-${crop.id}`,
-      title: `可以种植${formatItemName(crop, 'zh-CN')}`,
+      id: formatPlantingActionId(zone, crop.id),
+      title: `${formatPlantingZoneName(zone)}可以种植${formatItemName(crop, 'zh-CN')}`,
       category: 'profit',
       priority: 'optional',
       confidence: uncertainty.length === 0 ? 'high' : 'medium',
-      reason: `${formatItemName(crop, 'zh-CN')}需要${crop.growthDays}天成熟，今天种下仍可在本季结束前成熟。`,
+      reason: zone === 'farm'
+        ? `${formatItemName(crop, 'zh-CN')}需要${crop.growthDays}天成熟，今天种下仍可在本季结束前成熟。`
+        : `${formatPlantingZoneName(zone)}不受当前季节限制，${formatItemName(crop, 'zh-CN')}需要${crop.growthDays}天成熟。`,
       evidence,
       uncertainty,
       estimate: {
         kind: 'projected',
         gold: roi.profit,
-        description: `保守预计利润约${roi.profit}金`,
+        description: zone === 'farm' ? `保守预计利润约${roi.profit}金` : formatZoneEstimateDescription(crop.regrowDays, roi.profit),
       },
     } satisfies RecommendationItem;
   });
@@ -516,14 +682,99 @@ function buildPlantingUncertainty(status: {
   hasParsedShop: boolean;
   hasParsedEmptyPlots: boolean;
   hasParsedSprinkler: boolean;
+  zone?: PlantingZone;
 }): string[] {
+  const zoneName = status.zone && status.zone !== 'farm' ? formatPlantingZoneName(status.zone) : '';
   const missing = [
     ...status.hasParsedShop ? [] : ['商店是否开放'],
     ...status.hasSeed ? [] : ['是否已拥有种子'],
-    ...status.hasParsedEmptyPlots ? [] : ['是否有足够空地'],
-    ...status.hasParsedSprinkler ? [] : ['洒水覆盖'],
+    ...status.hasParsedEmptyPlots ? [] : [`${zoneName}是否有足够空地`],
+    ...status.hasParsedSprinkler ? [] : [`${zoneName}洒水覆盖`],
   ];
   return missing.length > 0 ? [`未解析${missing.join('、')}。`] : [];
+}
+
+function getPlantingZoneSummary(
+  snapshot: PlannerInput['snapshot'],
+  zone: PlantingZone,
+): PlantingZoneSummary | undefined {
+  const parsedZone = snapshot.plantingZones?.find((item) => item.zone === zone);
+  if (parsedZone) {
+    return parsedZone;
+  }
+
+  if (zone !== 'farm') {
+    return undefined;
+  }
+
+  if (!snapshot.farmPlotSummary) {
+    return {
+      zone: 'farm',
+      unlockState: 'unlocked',
+      usable: true,
+      plantedCropCount: snapshot.crops.reduce((total, crop) => total + Math.max(0, crop.quantity), 0),
+      matureCropCount: snapshot.crops.filter((crop) => crop.isReady).length,
+      parsedFields: [],
+      unknownFields: ['emptyTileCount', 'sprinklerCoverage'],
+    };
+  }
+
+  return {
+    zone: 'farm',
+    unlockState: 'unlocked',
+    usable: true,
+    plantedCropCount: snapshot.farmPlotSummary.plantedCropCount,
+    matureCropCount: snapshot.crops.filter((crop) => crop.isReady).length,
+    tilledTileCount: snapshot.farmPlotSummary.tilledTileCount,
+    emptyTilledTileCount: snapshot.farmPlotSummary.emptyTileCount,
+    occupiedObjectCount: snapshot.farmPlotSummary.occupiedObjectCount,
+    resourceClumpCount: snapshot.farmPlotSummary.resourceClumpCount,
+    buildingCount: snapshot.farmPlotSummary.buildingCount,
+    sprinklerCount: snapshot.farmPlotSummary.sprinklerCount,
+    sprinklerCoverageParsed: snapshot.farmPlotSummary.sprinklerCoverageParsed,
+    parsedFields: snapshot.farmPlotSummary.parsedFields,
+    unknownFields: snapshot.farmPlotSummary.unknownFields,
+  };
+}
+
+function canUsePlantingZone(zoneSummary: PlantingZoneSummary | undefined): boolean {
+  return zoneSummary?.unlockState === 'unlocked' && zoneSummary.usable === true;
+}
+
+function formatPlantingActionId(zone: PlantingZone, cropId: string): string {
+  if (zone === 'farm') {
+    return `plant-${cropId}`;
+  }
+
+  return `plant-${zone.replaceAll('_', '-')}-${cropId}`;
+}
+
+function formatPlantingZoneName(zone: PlantingZone): string {
+  return {
+    farm: '普通农场',
+    greenhouse: '温室',
+    ginger_island_farm: '姜岛农场',
+  }[zone];
+}
+
+function formatZoneEmptyPlotEvidence(zone: PlantingZone, emptyTilledTileCount: number): string {
+  return zone === 'farm'
+    ? `已耕空地 ${emptyTilledTileCount} 块`
+    : `${formatPlantingZoneName(zone)}已耕空地 ${emptyTilledTileCount} 块`;
+}
+
+function formatZoneHarvestCount(regrowDays: number | undefined, harvests: number, zone: PlantingZone): string {
+  if (zone !== 'farm') {
+    return regrowDays ? '复收作物，长期收益' : '首次成熟后可收获一次';
+  }
+
+  return `${harvests}次`;
+}
+
+function formatZoneEstimateDescription(regrowDays: number | undefined, profit: number): string {
+  return regrowDays
+    ? `首次成熟后可持续复收，保守首季参考利润约${profit}金`
+    : `首次成熟后可收获一次，保守参考利润约${profit}金`;
 }
 
 function buildFishingActions(input: PlannerInput): RecommendationItem[] {

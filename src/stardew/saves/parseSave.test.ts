@@ -374,6 +374,177 @@ test('parses farm sprinklers without claiming sprinkler coverage is parsed', () 
   assert.equal(snapshot.farmPlotSummary?.unknownFields.includes('sprinklerCoverage'), true);
 });
 
+test('parses planting zones separately for farm greenhouse and ginger island farm', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <year>3</year>
+      <currentSeason>winter</currentSeason>
+      <dayOfMonth>5</dayOfMonth>
+      <player>
+        <name>Farmer</name>
+        <farmName>Sunrise Farm</farmName>
+        <mailReceived>
+          <string>ccPantry</string>
+          <string>willyBoatFixed</string>
+        </mailReceived>
+      </player>
+      <locations>
+        <GameLocation>
+          <name>Farm</name>
+          <terrainFeatures>
+            <item><value><TerrainFeature xsi:type="HoeDirt" /></value></item>
+          </terrainFeatures>
+        </GameLocation>
+        <GameLocation>
+          <name>Greenhouse</name>
+          <terrainFeatures>
+            <item>
+              <value>
+                <TerrainFeature xsi:type="HoeDirt">
+                  <crop>
+                    <Name>Blueberry</Name>
+                    <isReadyForHarvest>true</isReadyForHarvest>
+                  </crop>
+                </TerrainFeature>
+              </value>
+            </item>
+            <item><value><TerrainFeature xsi:type="HoeDirt" /></value></item>
+          </terrainFeatures>
+          <objects>
+            <item><value><Object><Name>Iridium Sprinkler</Name><ItemId>645</ItemId></Object></value></item>
+          </objects>
+        </GameLocation>
+        <GameLocation>
+          <name>IslandWest</name>
+          <terrainFeatures>
+            <item>
+              <value>
+                <TerrainFeature xsi:type="HoeDirt">
+                  <crop><Name>Starfruit</Name></crop>
+                </TerrainFeature>
+              </value>
+            </item>
+            <item><value><TerrainFeature xsi:type="HoeDirt" /></value></item>
+            <item><value><TerrainFeature xsi:type="HoeDirt" /></value></item>
+          </terrainFeatures>
+          <objects>
+            <item><value><Object><Name>Quality Sprinkler</Name><ItemId>621</ItemId></Object></value></item>
+          </objects>
+        </GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Farmer_123456',
+    '2026-06-28T00:00:00.000Z',
+  );
+
+  assert.deepEqual(snapshot.plantingZones?.map((zone) => ({
+    zone: zone.zone,
+    unlockState: zone.unlockState,
+    usable: zone.usable,
+    plantedCropCount: zone.plantedCropCount,
+    matureCropCount: zone.matureCropCount,
+    tilledTileCount: zone.tilledTileCount,
+    emptyTilledTileCount: zone.emptyTilledTileCount,
+    sprinklerCount: zone.sprinklerCount,
+    sprinklerCoverageParsed: zone.sprinklerCoverageParsed,
+  })), [
+    {
+      zone: 'farm',
+      unlockState: 'unlocked',
+      usable: true,
+      plantedCropCount: 0,
+      matureCropCount: 0,
+      tilledTileCount: 1,
+      emptyTilledTileCount: 1,
+      sprinklerCount: undefined,
+      sprinklerCoverageParsed: undefined,
+    },
+    {
+      zone: 'greenhouse',
+      unlockState: 'unlocked',
+      usable: true,
+      plantedCropCount: 1,
+      matureCropCount: 1,
+      tilledTileCount: 2,
+      emptyTilledTileCount: 1,
+      sprinklerCount: 1,
+      sprinklerCoverageParsed: false,
+    },
+    {
+      zone: 'ginger_island_farm',
+      unlockState: 'unlocked',
+      usable: true,
+      plantedCropCount: 1,
+      matureCropCount: 0,
+      tilledTileCount: 3,
+      emptyTilledTileCount: 2,
+      sprinklerCount: 1,
+      sprinklerCoverageParsed: false,
+    },
+  ]);
+});
+
+test('does not treat a Greenhouse location alone as a restored greenhouse', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <year>1</year>
+      <currentSeason>spring</currentSeason>
+      <dayOfMonth>12</dayOfMonth>
+      <player>
+        <name>Farmer</name>
+        <farmName>Fun Farm</farmName>
+      </player>
+      <locations>
+        <GameLocation><name>Farm</name></GameLocation>
+        <GameLocation>
+          <name>Greenhouse</name>
+          <terrainFeatures>
+            <item><value><TerrainFeature xsi:type="HoeDirt" /></value></item>
+          </terrainFeatures>
+        </GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Farmer_123456',
+    '2026-06-28T00:00:00.000Z',
+  );
+
+  const greenhouseZone = snapshot.plantingZones?.find((zone) => zone.zone === 'greenhouse');
+  assert.equal(greenhouseZone?.unlockState, 'unknown');
+  assert.equal(greenhouseZone?.usable, undefined);
+  assert.equal(greenhouseZone?.parsedFields.length, 0);
+  assert.equal(greenhouseZone?.unknownFields.includes('greenhouseStatus'), true);
+});
+
+test('does not treat ginger island access alone as a usable island farm', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame>
+      <year>3</year>
+      <currentSeason>winter</currentSeason>
+      <dayOfMonth>5</dayOfMonth>
+      <player>
+        <name>Farmer</name>
+        <farmName>Sunrise Farm</farmName>
+        <mailReceived>
+          <string>willyBoatFixed</string>
+        </mailReceived>
+      </player>
+      <locations>
+        <GameLocation><name>Farm</name></GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Farmer_123456',
+    '2026-06-28T00:00:00.000Z',
+  );
+
+  const islandZone = snapshot.plantingZones?.find((zone) => zone.zone === 'ginger_island_farm');
+  assert.equal(islandZone?.unlockState, 'unlocked');
+  assert.equal(islandZone?.usable, undefined);
+  assert.equal(islandZone?.unknownFields.includes('gingerIslandFarmLocation'), true);
+});
+
 test('parses animal products and hay days remaining', () => {
   const snapshot = parseStardewSaveXml(
     `<?xml version="1.0" encoding="utf-8"?>

@@ -321,6 +321,11 @@ body.modal-open .content {
   overflow: hidden;
 }
 
+.content-overview {
+  display: grid;
+  gap: 20px;
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -688,13 +693,16 @@ body.modal-open .content {
 }
 
 .recommendation-tabs {
-  display: inline-flex;
-  width: fit-content;
-  max-width: 100%;
-  border: 1px solid #d7dfd4;
-  border-radius: 8px;
-  padding: 4px;
-  background: #fff;
+  position: sticky;
+  top: -32px;
+  z-index: 8;
+  display: flex;
+  width: calc(100% + 64px);
+  max-width: none;
+  margin-inline: -32px;
+  background: #f7f6f1;
+  border-bottom: 1px solid #d7dfd4;
+  padding: 8px 32px;
 }
 
 .recommendation-tab {
@@ -971,6 +979,25 @@ body.modal-open .content {
   padding-right: 0;
 }
 
+.planting-actions-modal,
+.recommendation-actions-modal,
+.greenhouse-planting-modal {
+  width: min(1040px, 100%);
+}
+
+.planting-actions-grid,
+.recommendation-actions-grid,
+.greenhouse-planting-grid {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
 .produced-item-source-groups {
   display: grid;
   align-content: start;
@@ -1149,8 +1176,16 @@ body.modal-open .content {
   }
 
   .recommendation-tabs {
+    top: 0;
     display: grid;
     width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  .recommendation-tab-panel {
+    overflow: visible;
   }
 
   .info-grid {

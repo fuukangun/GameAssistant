@@ -74,6 +74,7 @@ export function App() {
   const [expandedGameIds, setExpandedGameIds] = useState<Record<string, boolean>>({ 'stardew-valley': true });
   const [showBackToTop, setShowBackToTop] = useState(false);
   const contentRef = useRef<HTMLElement | null>(null);
+  const tabScrollResetFrameRef = useRef<number | undefined>(undefined);
   const previousSelectedSaveIdRef = useRef<string | undefined>(undefined);
   const saves = useStore(saveStore, (state) => state.saves);
   const selectedSaveId = useStore(saveStore, (state) => state.selectedSaveId);
@@ -99,7 +100,6 @@ export function App() {
   const routeProgress = createRouteProgressSummary(snapshot, language);
   const sidebarGameGroups = createSidebarGameGroups(saves, language);
   const hasSelectedSnapshot = Boolean(selectedSaveId && snapshotsBySaveId[selectedSaveId]);
-
   useEffect(() => {
     setActiveRecommendationTab((currentTab) => resolveRecommendationTabForSaveSelection({
       activeTabId: currentTab,
@@ -115,6 +115,14 @@ export function App() {
       setSnapshot(selected);
     }
   }, [selectedSaveId, setSnapshot, snapshot, snapshotsBySaveId]);
+
+  useEffect(() => {
+    return () => {
+      if (tabScrollResetFrameRef.current !== undefined) {
+        window.cancelAnimationFrame(tabScrollResetFrameRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!isDesktopRuntime) {
@@ -323,6 +331,46 @@ export function App() {
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function scheduleRecommendationPanelScrollReset() {
+    if (tabScrollResetFrameRef.current !== undefined) {
+      window.cancelAnimationFrame(tabScrollResetFrameRef.current);
+    }
+
+    tabScrollResetFrameRef.current = window.requestAnimationFrame(() => {
+      tabScrollResetFrameRef.current = undefined;
+      scrollRecommendationPanelToStartIfSticky();
+    });
+  }
+
+  function scrollRecommendationPanelToStartIfSticky() {
+    const content = contentRef.current;
+    const tabs = content?.querySelector<HTMLElement>('.recommendation-tabs');
+    const panel = content?.querySelector<HTMLElement>('.recommendation-tab-panel');
+    if (!content || !tabs || !panel) {
+      return;
+    }
+
+    const contentRect = content.getBoundingClientRect();
+    const tabsRect = tabs.getBoundingClientRect();
+    if (tabsRect.top > contentRect.top + 1) {
+      return;
+    }
+
+    const panelGap = panel.getBoundingClientRect().top - tabsRect.bottom;
+    const targetScrollTop = content.scrollTop + panel.getBoundingClientRect().top - contentRect.top - tabsRect.height - Math.max(panelGap, 0);
+    content.scrollTo({ top: targetScrollTop, behavior: 'auto' });
+    setShowBackToTop(shouldShowBackToTop(targetScrollTop));
+  }
+
+  function handleRecommendationTabChange(tabId: RecommendationTabId) {
+    if (tabId === activeRecommendationTab) {
+      return;
+    }
+
+    setActiveRecommendationTab(tabId);
+    scheduleRecommendationPanelScrollReset();
+  }
+
   function toggleGameGroup(gameId: string) {
     setExpandedGameIds((current) => ({
       ...current,
@@ -452,108 +500,110 @@ export function App() {
           </section>
         ) : (
         <>
-        <header className="page-header">
-          <div>
-            <h2>{formatPlanTitle(planDate, language)}</h2>
-            {plan.subtitle ? <p>{plan.subtitle}</p> : null}
-          </div>
-          <div className="header-controls">
-            <label className="weather-select">
-              <span>{t(language, 'header.goal')}</span>
-              <select
-                value={goal}
-                onChange={(event) => setGoal(event.target.value as PlannerGoal)}
-              >
-                <option value="free">{formatGoalLabel('free', language)}</option>
-                <option value="money">{formatGoalLabel('money', language)}</option>
-              </select>
-            </label>
-            <div className="weather-select status-readout">
-              <span>{t(language, 'header.weather')}</span>
-              <strong>{formatWeatherLabel(selectedWeather, language)}</strong>
+        <div className="content-overview">
+          <header className="page-header">
+            <div>
+              <h2>{formatPlanTitle(planDate, language)}</h2>
+              {plan.subtitle ? <p>{plan.subtitle}</p> : null}
             </div>
-            <div className="weather-select status-readout">
-              <span>{t(language, 'header.luck')}</span>
-              <strong>{formatLuck(snapshot.player.dailyLuck, language)}</strong>
+            <div className="header-controls">
+              <label className="weather-select">
+                <span>{t(language, 'header.goal')}</span>
+                <select
+                  value={goal}
+                  onChange={(event) => setGoal(event.target.value as PlannerGoal)}
+                >
+                  <option value="free">{formatGoalLabel('free', language)}</option>
+                  <option value="money">{formatGoalLabel('money', language)}</option>
+                </select>
+              </label>
+              <div className="weather-select status-readout">
+                <span>{t(language, 'header.weather')}</span>
+                <strong>{formatWeatherLabel(selectedWeather, language)}</strong>
+              </div>
+              <div className="weather-select status-readout">
+                <span>{t(language, 'header.luck')}</span>
+                <strong>{formatLuck(snapshot.player.dailyLuck, language)}</strong>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <div className="notice">{t(language, 'notice.afterSleepSave')}</div>
+          <div className="notice">{t(language, 'notice.afterSleepSave')}</div>
 
-        {plan.parseWarnings.length > 0 ? (
-          <section className="warning-list" aria-label={t(language, 'notice.parseWarnings')}>
-            {plan.parseWarnings.map((warning) => (
-              <p key={`${warning.code}-${warning.message}`}>{formatParseWarningMessage(warning, language)}</p>
+          {plan.parseWarnings.length > 0 ? (
+            <section className="warning-list" aria-label={t(language, 'notice.parseWarnings')}>
+              {plan.parseWarnings.map((warning) => (
+                <p key={`${warning.code}-${warning.message}`}>{formatParseWarningMessage(warning, language)}</p>
+              ))}
+            </section>
+          ) : null}
+
+          <section className="summary-grid" aria-label={t(language, 'summary.aria.currentStatus')}>
+            {createSummaryCards(snapshot, planDate, language).map((card) => (
+              <div key={card.id}>
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+                {card.detail ? <small>{card.detail}</small> : null}
+              </div>
             ))}
           </section>
-        ) : null}
 
-        <section className="summary-grid" aria-label={t(language, 'summary.aria.currentStatus')}>
-          {createSummaryCards(snapshot, planDate, language).map((card) => (
-            <div key={card.id}>
-              <span>{card.label}</span>
-              <strong>{card.value}</strong>
-              {card.detail ? <small>{card.detail}</small> : null}
+          <section className="corrections" aria-label={t(language, 'corrections.title')}>
+            <div className="corrections-copy">
+              <h3>{t(language, 'corrections.title')}</h3>
+              <p>{t(language, 'corrections.copy')}</p>
             </div>
-          ))}
-        </section>
-
-        <section className="corrections" aria-label={t(language, 'corrections.title')}>
-          <div className="corrections-copy">
-            <h3>{t(language, 'corrections.title')}</h3>
-            <p>{t(language, 'corrections.copy')}</p>
-          </div>
-          <div className="correction-options">
-            <label>
-              <input
-                checked={manualCorrections.wateredToday}
-                type="checkbox"
-                onChange={(event) => {
-                  setManualCorrection('wateredToday', event.target.checked);
-                }}
-              />
-              {t(language, 'corrections.watered')}
-            </label>
-            <label>
-              <input
-                checked={manualCorrections.harvestedToday}
-                type="checkbox"
-                onChange={(event) => {
-                  setManualCorrection('harvestedToday', event.target.checked);
-                }}
-              />
-              {t(language, 'corrections.harvested')}
-            </label>
-            <label>
-              <input
-                checked={manualCorrections.giftedToday}
-                type="checkbox"
-                onChange={(event) => {
-                  setManualCorrection('giftedToday', event.target.checked);
-                }}
-              />
-              {t(language, 'corrections.gifted')}
-            </label>
-          </div>
-        </section>
-
-        <section className="route-panel" id="settings" aria-label={t(language, 'mainRoute.title')}>
-          <div className="route-panel-header">
-            <div>
-              <span>{t(language, 'mainRoute.title')}</span>
-              <strong>{routeProgress.branchLabel}</strong>
+            <div className="correction-options">
+              <label>
+                <input
+                  checked={manualCorrections.wateredToday}
+                  type="checkbox"
+                  onChange={(event) => {
+                    setManualCorrection('wateredToday', event.target.checked);
+                  }}
+                />
+                {t(language, 'corrections.watered')}
+              </label>
+              <label>
+                <input
+                  checked={manualCorrections.harvestedToday}
+                  type="checkbox"
+                  onChange={(event) => {
+                    setManualCorrection('harvestedToday', event.target.checked);
+                  }}
+                />
+                {t(language, 'corrections.harvested')}
+              </label>
+              <label>
+                <input
+                  checked={manualCorrections.giftedToday}
+                  type="checkbox"
+                  onChange={(event) => {
+                    setManualCorrection('giftedToday', event.target.checked);
+                  }}
+                />
+                {t(language, 'corrections.gifted')}
+              </label>
             </div>
-            <b>{routeProgress.percent}%</b>
-          </div>
-          <div className="route-progress" aria-label={t(language, 'mainRoute.progress')}>
-            <div style={{ width: `${routeProgress.percent}%` }} />
-          </div>
-        </section>
+          </section>
+
+          <section className="route-panel" id="settings" aria-label={t(language, 'mainRoute.title')}>
+            <div className="route-panel-header">
+              <div>
+                <span>{t(language, 'mainRoute.title')}</span>
+                <strong>{routeProgress.branchLabel}</strong>
+              </div>
+              <b>{routeProgress.percent}%</b>
+            </div>
+            <div className="route-progress" aria-label={t(language, 'mainRoute.progress')}>
+              <div style={{ width: `${routeProgress.percent}%` }} />
+            </div>
+          </section>
+        </div>
 
         <RecommendationTabs
           activeTabId={activeRecommendationTab}
-          onTabChange={setActiveRecommendationTab}
+          onTabChange={handleRecommendationTabChange}
           selectedWeather={selectedWeather}
           snapshot={snapshot}
           language={language}
@@ -1092,32 +1142,7 @@ function RecommendationList({
     <div className="recommendation-list">
       {localizedItems.length > 0 ? localizedItems.map((item) => (
         <article className="recommendation-card" key={item.id}>
-          <div>
-            <span className="priority">{formatPriority(item.priority, language)}</span>
-            <span className="confidence" data-confidence={item.confidence}>
-              {t(language, 'recommendation.confidence')}：{formatConfidence(item.confidence, language)}
-            </span>
-            <h4>{item.title}</h4>
-          </div>
-          <p>{item.reason}</p>
-          {item.estimate ? <strong>{item.estimate.description}</strong> : null}
-          {item.evidence.length > 0 ? (
-            <dl className="evidence-list">
-              {item.evidence.map((evidence) => (
-                <div key={`${item.id}-${evidence.source}-${evidence.label}`}>
-                  <dt>{evidence.label}</dt>
-                  <dd>{evidence.value}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
-          {item.uncertainty.length > 0 ? (
-            <ul className="uncertainty-list" aria-label={t(language, 'recommendation.uncertainty')}>
-              {item.uncertainty.map((uncertainty) => (
-                <li key={`${item.id}-${uncertainty}`}>{uncertainty}</li>
-              ))}
-            </ul>
-          ) : null}
+          <RecommendationCardBody item={item} language={language} />
           {shouldShowRecommendationDetailButton(item) ? (
             <button className="detail-button" type="button" onClick={() => setDetailItem(item)}>
               {t(language, 'recommendation.viewDetails')}
@@ -1128,6 +1153,20 @@ function RecommendationList({
       {detailItem?.detail?.communityCenterDeliverables ? (
         <CommunityCenterDeliverablesModal
           deliverables={detailItem.detail.communityCenterDeliverables}
+          language={language}
+          onClose={() => setDetailItem(undefined)}
+        />
+      ) : null}
+      {detailItem?.detail?.plantingActions ? (
+        <PlantingActionsModal
+          items={detailItem.detail.plantingActions}
+          language={language}
+          onClose={() => setDetailItem(undefined)}
+        />
+      ) : null}
+      {detailItem?.detail?.recommendationActions ? (
+        <RecommendationActionsModal
+          items={detailItem.detail.recommendationActions}
           language={language}
           onClose={() => setDetailItem(undefined)}
         />
@@ -1143,8 +1182,44 @@ function RecommendationList({
   );
 }
 
+function RecommendationCardBody({ item, language }: { item: RecommendationItem; language: AppLanguage }) {
+  return (
+    <>
+      <div>
+        <span className="priority">{formatPriority(item.priority, language)}</span>
+        <span className="confidence" data-confidence={item.confidence}>
+          {t(language, 'recommendation.confidence')}：{formatConfidence(item.confidence, language)}
+        </span>
+        <h4>{item.title}</h4>
+      </div>
+      <p>{item.reason}</p>
+      {item.estimate ? <strong>{item.estimate.description}</strong> : null}
+      {item.evidence.length > 0 ? (
+        <dl className="evidence-list">
+          {item.evidence.map((evidence) => (
+            <div key={`${item.id}-${evidence.source}-${evidence.label}`}>
+              <dt>{evidence.label}</dt>
+              <dd>{evidence.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {item.uncertainty.length > 0 ? (
+        <ul className="uncertainty-list" aria-label={t(language, 'recommendation.uncertainty')}>
+          {item.uncertainty.map((uncertainty) => (
+            <li key={`${item.id}-${uncertainty}`}>{uncertainty}</li>
+          ))}
+        </ul>
+      ) : null}
+    </>
+  );
+}
+
 function shouldShowRecommendationDetailButton(item: RecommendationItem): boolean {
   return shouldShowCommunityCenterDetailButton(item.detail?.communityCenterDeliverables)
+    || Boolean(item.detail?.recommendationActions?.length)
+    || Boolean(item.detail?.plantingActions?.length)
+    || Boolean(item.detail?.greenhousePlantingActions?.length)
     || shouldShowProducedItemDetailButton(item.detail?.producedItems);
 }
 
@@ -1203,6 +1278,98 @@ function CommunityCenterDeliverablesModal({
                 ))}
               </div>
             </section>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function PlantingActionsModal({
+  items,
+  language,
+  onClose,
+}: {
+  items: NonNullable<RecommendationItem['detail']>['plantingActions'];
+  language: AppLanguage;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
+
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <section
+        aria-modal="true"
+        className="gift-modal planting-actions-modal"
+        role="dialog"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="gift-modal-header">
+          <h3>{t(language, 'plantingActionsModal.title')}</h3>
+          <button className="modal-close-button" type="button" onClick={onClose}>
+            {t(language, 'giftModal.close')}
+          </button>
+        </header>
+        <div className="planting-actions-grid">
+          {(items ?? []).map((item) => (
+            <article className="recommendation-card" key={item.id}>
+              <RecommendationCardBody item={item} language={language} />
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function RecommendationActionsModal({
+  items,
+  language,
+  onClose,
+}: {
+  items: NonNullable<RecommendationItem['detail']>['recommendationActions'];
+  language: AppLanguage;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
+
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <section
+        aria-modal="true"
+        className="gift-modal recommendation-actions-modal"
+        role="dialog"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="gift-modal-header">
+          <h3>{t(language, 'recommendationActionsModal.title')}</h3>
+          <button className="modal-close-button" type="button" onClick={onClose}>
+            {t(language, 'giftModal.close')}
+          </button>
+        </header>
+        <div className="recommendation-actions-grid">
+          {(items ?? []).map((item) => (
+            <article className="recommendation-card" key={item.id}>
+              <RecommendationCardBody item={item} language={language} />
+            </article>
           ))}
         </div>
       </section>

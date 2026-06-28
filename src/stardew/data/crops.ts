@@ -1,10 +1,11 @@
 import cropPlantingOptions from './cropPlantingOptions.json' with { type: 'json' };
-import type { Season } from '../../shared/types.ts';
+import type { PlantingZone, Season } from '../../shared/types.ts';
 
 export interface CropPlantingOption {
   id: string;
   name: string;
   season: Season;
+  seasons?: Season[];
   daysToMature: number;
   growthDays: number;
   seedPrice: number;
@@ -12,6 +13,10 @@ export interface CropPlantingOption {
   seedIds: Array<number | string>;
   seedName: string;
   regrowDays?: number;
+  allowedPlantingZones?: PlantingZone[];
+  disallowedPlantingZones?: PlantingZone[];
+  specialRequirements?: string[];
+  processingValueTags?: string[];
   notes?: string;
 }
 
@@ -29,7 +34,18 @@ export interface CropPlantingDate {
   year?: number;
 }
 
-export const BASIC_PLANTING_OPTIONS: CropPlantingOption[] = cropPlantingOptions as CropPlantingOption[];
+export const BASIC_PLANTING_OPTIONS: CropPlantingOption[] = (cropPlantingOptions as CropPlantingOption[])
+  .map(normalizeCropPlantingOption);
+
+function normalizeCropPlantingOption(crop: CropPlantingOption): CropPlantingOption {
+  const seasons = crop.seasons ?? [crop.season];
+  return {
+    ...crop,
+    seasons,
+    allowedPlantingZones: crop.allowedPlantingZones ?? ['farm', 'greenhouse', 'ginger_island_farm'],
+  };
+}
+
 export function findCropById(id: string): CropPlantingOption | undefined {
   return BASIC_PLANTING_OPTIONS.find((crop) => crop.id === id);
 }
@@ -42,7 +58,7 @@ export function canCropMatureBySeasonEnd(
     return false;
   }
 
-  if (crop.season !== date.season) {
+  if (!(crop.seasons ?? [crop.season]).includes(date.season)) {
     return false;
   }
 

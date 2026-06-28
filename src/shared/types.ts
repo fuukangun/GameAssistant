@@ -35,6 +35,7 @@ export interface StardewSaveSnapshot {
   parseMeta: ParseMeta;
   farm: FarmSummary;
   farmPlotSummary?: FarmPlotSummary;
+  plantingZones?: PlantingZoneSummary[];
   player: PlayerSummary;
   time: SaveTime;
   weatherForTomorrow?: Weather;
@@ -92,6 +93,27 @@ export interface FarmPlotSummary {
   sprinklerCount?: number;
   sprinklerCoverageParsed?: boolean;
   wateredTileCount?: number;
+  parsedFields: string[];
+  unknownFields: string[];
+}
+
+export type PlantingZone = 'farm' | 'greenhouse' | 'ginger_island_farm';
+
+export type PlantingZoneUnlockState = 'unlocked' | 'locked' | 'unknown';
+
+export interface PlantingZoneSummary {
+  zone: PlantingZone;
+  unlockState: PlantingZoneUnlockState;
+  usable?: boolean;
+  plantedCropCount?: number;
+  matureCropCount?: number;
+  tilledTileCount?: number;
+  emptyTilledTileCount?: number;
+  occupiedObjectCount?: number;
+  resourceClumpCount?: number;
+  buildingCount?: number;
+  sprinklerCount?: number;
+  sprinklerCoverageParsed?: boolean;
   parsedFields: string[];
   unknownFields: string[];
 }
@@ -266,6 +288,9 @@ export interface RecommendationItem {
 
 export interface RecommendationDetail {
   communityCenterDeliverables?: CommunityCenterDeliverableDetail[];
+  greenhousePlantingActions?: RecommendationItem[];
+  plantingActions?: RecommendationItem[];
+  recommendationActions?: RecommendationItem[];
   producedItems?: ProducedItemDetail[];
 }
 

@@ -3,6 +3,7 @@ import type {
   CropSummary,
   EquipmentSummary,
   FarmPlotSummary,
+  FarmSummary,
   AnimalFeedSummary,
   BlacksmithSummary,
   CraftingSummary,
@@ -10,6 +11,9 @@ import type {
   MachineStateSummary,
   MachineStateKind,
   ParseWarning,
+  PlantingZone,
+  PlantingZoneSummary,
+  PlantingZoneUnlockState,
   ProducedItemSummary,
   RelationshipSummary,
   StardewSaveSnapshot,
@@ -73,6 +77,19 @@ export function parseStardewSaveXml(
   const hasDesertAccess = detectDesertAccess(root, player);
   const hasIslandAccess = detectIslandAccess(root, player);
   const mineDepth = parseMineDepth(root, player);
+  const farm = {
+    farmName,
+    playerName,
+    farmType: SAVE_PARSING_RULES.farmTypes[whichFarm] ?? whichFarm,
+    hasDesertAccess,
+    hasIslandAccess,
+    hasSkullCavernAccess: detectSkullCavernAccess(root, player, hasDesertAccess, mineDepth.regularMineLevel),
+    hasVolcanoDungeonAccess: detectVolcanoDungeonAccess(root, player, hasIslandAccess),
+    mineLevel: mineDepth.regularMineLevel,
+    skullCavernLevel: mineDepth.skullCavernLevel,
+    communityCenterRoute: route,
+  };
+  const plantingZones = parsePlantingZones(root, farm);
 
   return {
     saveIdentity: {
@@ -86,19 +103,9 @@ export function parseStardewSaveXml(
       parserVersion: '0.2.0',
       warnings,
     },
-    farm: {
-      farmName,
-      playerName,
-      farmType: SAVE_PARSING_RULES.farmTypes[whichFarm] ?? whichFarm,
-      hasDesertAccess,
-      hasIslandAccess,
-      hasSkullCavernAccess: detectSkullCavernAccess(root, player, hasDesertAccess, mineDepth.regularMineLevel),
-      hasVolcanoDungeonAccess: detectVolcanoDungeonAccess(root, player, hasIslandAccess),
-      mineLevel: mineDepth.regularMineLevel,
-      skullCavernLevel: mineDepth.skullCavernLevel,
-      communityCenterRoute: route,
-    },
-    farmPlotSummary: parseFarmPlotSummary(root),
+    farm,
+    farmPlotSummary: deriveFarmPlotSummaryFromZones(plantingZones),
+    plantingZones,
     player: {
       maxEnergy: numberField(player, 'maxStamina') ?? 0,
       health: numberField(player, 'health'),
@@ -944,67 +951,149 @@ function normalizeRecipeId(recipeName: string): string {
     .toLowerCase();
 }
 
-function parseFarmPlotSummary(root: XmlObject): FarmPlotSummary | undefined {
-  const farmLocation = findFarmLocation(root);
-  if (!farmLocation) {
-    return undefined;
+function parsePlantingZones(root: XmlObject, farm: FarmSummary): PlantingZoneSummary[] {
+  return [
+    parsePlantingZoneFromLocation(findLocationByName(root, ['Farm']), 'farm', 'unlocked', true, 'Farm'),
+    parseGreenhousePlantingZone(root),
+    parseGingerIslandFarmPlantingZone(root, farm),
+  ];
+}
+
+function parseGreenhousePlantingZone(root: XmlObject): PlantingZoneSummary {
+  const isRestored = detectGreenhouseRestored(root);
+  const location = findLocationByName(root, ['Greenhouse']);
+  if (isRestored && location) {
+    return parsePlantingZoneFromLocation(location, 'greenhouse', 'unlocked', true, 'Greenhouse');
   }
 
-  const terrainFeatures = objectField(farmLocation, 'terrainFeatures');
-  const objects = objectField(farmLocation, 'objects');
-  const buildings = objectField(farmLocation, 'buildings');
-  const resourceClumps = objectField(farmLocation, 'resourceClumps');
+  if (isRestored) {
+    return createUnknownPlantingZone('greenhouse', 'unlocked', undefined, ['greenhouseLocation']);
+  }
 
-  const tilledTileCount = terrainFeatures
-    ? asArray(terrainFeatures.item).filter(isHoeDirtTerrainFeatureItem).length
-    : 0;
-  const plantedCropCount = terrainFeatures
-    ? asArray(terrainFeatures.item).filter(hasCropInTerrainFeatureItem).length
-    : 0;
+  return createUnknownPlantingZone('greenhouse', 'unknown', undefined, ['greenhouseStatus']);
+}
+
+function parseGingerIslandFarmPlantingZone(root: XmlObject, farm: FarmSummary): PlantingZoneSummary {
+  if (!farm.hasIslandAccess) {
+    return createUnknownPlantingZone('ginger_island_farm', 'locked', false, []);
+  }
+
+  const location = findLocationByName(root, ['IslandWest', 'IslandFarm', 'GingerIslandFarm']);
+  if (location) {
+    return parsePlantingZoneFromLocation(location, 'ginger_island_farm', 'unlocked', true, textField(location, 'name') ?? textField(location, 'Name') ?? 'IslandWest');
+  }
+
+  return createUnknownPlantingZone('ginger_island_farm', 'unlocked', undefined, ['gingerIslandFarmLocation']);
+}
+
+function parsePlantingZoneFromLocation(
+  location: XmlObject | undefined,
+  zone: PlantingZone,
+  unlockState: PlantingZoneUnlockState,
+  usable: boolean | undefined,
+  locationName: string,
+): PlantingZoneSummary {
+  if (!location) {
+    return createUnknownPlantingZone(zone, unlockState, usable, [`${locationName}Location`]);
+  }
+
+  const terrainFeatures = objectField(location, 'terrainFeatures');
+  const objects = objectField(location, 'objects');
+  const buildings = objectField(location, 'buildings');
+  const resourceClumps = objectField(location, 'resourceClumps');
+  const terrainFeatureItems = terrainFeatures ? asArray(terrainFeatures.item) : [];
+  const objectItems = objects ? asArray(objects.item) : [];
+  const tilledTileCount = terrainFeatureItems.filter(isHoeDirtTerrainFeatureItem).length;
+  const plantedCropCount = terrainFeatureItems.filter(hasCropInTerrainFeatureItem).length;
+  const matureCropCount = terrainFeatureItems.filter(hasReadyCropInTerrainFeatureItem).length;
   const emptyTilledTileCount = terrainFeatures
-    ? asArray(terrainFeatures.item).filter(isEmptyHoeDirtTerrainFeatureItem).length
+    ? terrainFeatureItems.filter(isEmptyHoeDirtTerrainFeatureItem).length
     : undefined;
-  const occupiedObjectCount = objects ? asArray(objects.item).length : 0;
-  const sprinklerCount = objects ? asArray(objects.item).filter(isSprinklerObjectItem).length : 0;
+  const occupiedObjectCount = objects ? objectItems.length : 0;
+  const sprinklerCount = objectItems.filter(isSprinklerObjectItem).length;
   const buildingCount = buildings ? countCollectionEntries(buildings, ['Building', 'item']) : 0;
   const resourceClumpCount = resourceClumps ? countCollectionEntries(resourceClumps, ['ResourceClump', 'item']) : 0;
   const parsedFields = [
-    terrainFeatures ? 'locations.GameLocation[name=Farm].terrainFeatures' : undefined,
-    objects ? 'locations.GameLocation[name=Farm].objects' : undefined,
-    buildings ? 'locations.GameLocation[name=Farm].buildings' : undefined,
-    resourceClumps ? 'locations.GameLocation[name=Farm].resourceClumps' : undefined,
+    terrainFeatures ? `locations.GameLocation[name=${locationName}].terrainFeatures` : undefined,
+    objects ? `locations.GameLocation[name=${locationName}].objects` : undefined,
+    buildings ? `locations.GameLocation[name=${locationName}].buildings` : undefined,
+    resourceClumps ? `locations.GameLocation[name=${locationName}].resourceClumps` : undefined,
   ].filter((field): field is string => Boolean(field));
 
-  if (parsedFields.length === 0) {
-    return undefined;
-  }
-
   return {
+    zone,
+    unlockState,
+    usable,
     plantedCropCount,
+    matureCropCount,
     tilledTileCount,
+    emptyTilledTileCount,
     occupiedObjectCount,
     resourceClumpCount,
     buildingCount,
-    emptyTileCount: emptyTilledTileCount,
     ...(sprinklerCount > 0 ? {
       sprinklerCount,
       sprinklerCoverageParsed: false,
     } : {}),
     parsedFields,
     unknownFields: [
-      'farmableTileCount',
       terrainFeatures ? undefined : 'emptyTileCount',
       sprinklerCount > 0 ? 'sprinklerCoverage' : undefined,
+    ].filter((field): field is string => Boolean(field)),
+  };
+}
+
+function createUnknownPlantingZone(
+  zone: PlantingZone,
+  unlockState: PlantingZoneUnlockState,
+  usable: boolean | undefined,
+  unknownFields: string[],
+): PlantingZoneSummary {
+  return {
+    zone,
+    unlockState,
+    usable,
+    parsedFields: [],
+    unknownFields,
+  };
+}
+
+function deriveFarmPlotSummaryFromZones(zones: PlantingZoneSummary[]): FarmPlotSummary | undefined {
+  const farmZone = zones.find((zone) => zone.zone === 'farm');
+  if (!farmZone || farmZone.parsedFields.length === 0) {
+    return undefined;
+  }
+
+  return {
+    plantedCropCount: farmZone.plantedCropCount ?? 0,
+    tilledTileCount: farmZone.tilledTileCount ?? 0,
+    occupiedObjectCount: farmZone.occupiedObjectCount ?? 0,
+    resourceClumpCount: farmZone.resourceClumpCount ?? 0,
+    buildingCount: farmZone.buildingCount ?? 0,
+    emptyTileCount: farmZone.emptyTilledTileCount,
+    ...(farmZone.sprinklerCount !== undefined ? {
+      sprinklerCount: farmZone.sprinklerCount,
+      sprinklerCoverageParsed: farmZone.sprinklerCoverageParsed,
+    } : {}),
+    parsedFields: farmZone.parsedFields,
+    unknownFields: [
+      'farmableTileCount',
+      farmZone.emptyTilledTileCount === undefined ? 'emptyTileCount' : undefined,
+      ...(farmZone.unknownFields.includes('sprinklerCoverage') ? ['sprinklerCoverage'] : []),
       'buildingFootprints',
     ].filter((field): field is string => Boolean(field)),
   };
 }
 
-function findFarmLocation(root: XmlObject): XmlObject | undefined {
+function findLocationByName(root: XmlObject, names: string[]): XmlObject | undefined {
   return collectObjectsByKey(root, 'GameLocation').find((location) => {
     const name = textField(location, 'name') ?? textField(location, 'Name');
-    return name === 'Farm';
+    return name !== undefined && names.includes(name);
   });
+}
+
+function detectGreenhouseRestored(root: XmlObject): boolean {
+  return hasAnySerializedMarker(root, ['ccPantry', 'jojaPantry']);
 }
 
 function isHoeDirtTerrainFeatureItem(item: XmlObject): boolean {
@@ -1016,6 +1105,12 @@ function isHoeDirtTerrainFeatureItem(item: XmlObject): boolean {
 function hasCropInTerrainFeatureItem(item: XmlObject): boolean {
   const terrainFeature = objectField(objectField(item, 'value') ?? {}, 'TerrainFeature') ?? objectField(item, 'TerrainFeature') ?? item;
   return objectField(terrainFeature, 'crop') !== undefined;
+}
+
+function hasReadyCropInTerrainFeatureItem(item: XmlObject): boolean {
+  const terrainFeature = objectField(objectField(item, 'value') ?? {}, 'TerrainFeature') ?? objectField(item, 'TerrainFeature') ?? item;
+  const crop = objectField(terrainFeature, 'crop');
+  return crop ? boolField(crop, 'isReadyForHarvest') === true : false;
 }
 
 function isEmptyHoeDirtTerrainFeatureItem(item: XmlObject): boolean {

@@ -22,6 +22,8 @@ test('formats common game labels in Chinese', () => {
   assert.equal(formatNpcName('Sebastian'), '塞巴斯蒂安');
   assert.equal(formatNpcName('Dwarf'), '矮人');
   assert.equal(formatNpcName('Dwarf', 'en-US'), 'Dwarf');
+  assert.equal(formatNpcName('Leo'), '雷欧');
+  assert.equal(formatNpcName('Leo', 'en-US'), 'Leo');
   assert.equal(formatNpcName('Henchman'), '仆从');
   assert.equal(formatNpcName('Henchman', 'en-US'), 'Henchman');
   assert.equal(formatPriority('optional'), '可选');

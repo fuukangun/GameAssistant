@@ -49,6 +49,34 @@ export interface GiftOption {
   sourceLabel?: string;
 }
 
+interface IndexedGiftItem {
+  item: InventoryItem;
+  normalizedItemId: string;
+  catalogGiftName?: string;
+  normalizedCatalogGiftName?: string;
+  normalizedItemName: string;
+  itemNameId?: string;
+  displayName: string;
+}
+
+interface CompiledGiftList {
+  ids: Set<string>;
+  names: Set<string>;
+}
+
+interface CompiledGiftPreference {
+  loved: CompiledGiftList;
+  liked: CompiledGiftList;
+  neutral: CompiledGiftList;
+  excluded: CompiledGiftList;
+}
+
+const COMPILED_UNIVERSAL_GIFT_PREFERENCES = compileGiftPreference(UNIVERSAL_GIFT_PREFERENCES);
+const COMPILED_CONSERVATIVE_UNIVERSAL_FALLBACK = compileGiftPreference(CONSERVATIVE_UNIVERSAL_FALLBACK);
+const COMPILED_NPC_GIFT_PREFERENCES_BY_NAME = new Map(
+  NPC_GIFT_PREFERENCES.map((preference) => [preference.npc, compileGiftPreference(preference)]),
+);
+
 export function buildGiftSuggestions(
   relationship: RelationshipSummary,
   inventory: InventoryItem[],
@@ -65,17 +93,33 @@ export function buildGiftOptions(
   inventory: InventoryItem[],
   language: AppLanguage = 'zh-CN',
 ): GiftOption[] {
+  return createGiftOptionBuilder(inventory, language)(relationship);
+}
+
+export function createGiftOptionBuilder(
+  inventory: InventoryItem[],
+  language: AppLanguage = 'zh-CN',
+): (relationship: RelationshipSummary) => GiftOption[] {
+  const indexedInventory = inventory.map((item) => createIndexedGiftItem(item, language));
+
+  return (relationship: RelationshipSummary): GiftOption[] => buildGiftOptionsFromIndexed(relationship, indexedInventory);
+}
+
+function buildGiftOptionsFromIndexed(
+  relationship: RelationshipSummary,
+  indexedInventory: IndexedGiftItem[],
+): GiftOption[] {
   if ((relationship.giftsThisWeek ?? 0) >= 2) {
     return [];
   }
 
-  const preference = NPC_GIFT_PREFERENCES_BY_NAME.get(relationship.npc);
+  const preference = COMPILED_NPC_GIFT_PREFERENCES_BY_NAME.get(relationship.npc);
 
-  return inventory
+  return indexedInventory
     .flatMap((item): GiftOption[] => {
       const tier = preference
         ? getNpcGiftTier(item, preference)
-        : getGiftTier(item, [CONSERVATIVE_UNIVERSAL_FALLBACK]);
+        : getGiftTier(item, [COMPILED_CONSERVATIVE_UNIVERSAL_FALLBACK]);
       if (!tier) {
         return [];
       }
@@ -83,12 +127,12 @@ export function buildGiftOptions(
       return [{
         tier,
         category: formatGiftTier(tier),
-        displayName: formatItemName(item, language),
-        id: item.id,
-        stack: item.stack,
-        quality: item.quality,
-        source: item.source,
-        sourceLabel: item.sourceLabel,
+        displayName: item.displayName,
+        id: item.item.id,
+        stack: item.item.stack,
+        quality: item.item.quality,
+        source: item.item.source,
+        sourceLabel: item.item.sourceLabel,
       }];
     })
     .sort(compareGiftOptions);
@@ -99,22 +143,22 @@ export function hasGiftPreferenceData(npc: string): boolean {
 }
 
 function getNpcGiftTier(
-  item: InventoryItem,
-  preference: NpcGiftPreferences,
+  item: IndexedGiftItem,
+  preference: CompiledGiftPreference,
 ): GiftTier | undefined {
   const npcTier = getGiftTier(item, [preference]);
-  if (npcTier || matchesExcludedGift(item, preference) || matchesGiftTier(item, preference, 'neutral')) {
+  if (npcTier || matchesGiftList(item, preference.excluded) || matchesGiftTier(item, preference, 'neutral')) {
     return npcTier;
   }
 
-  return getGiftTier(item, [UNIVERSAL_GIFT_PREFERENCES]);
+  return getGiftTier(item, [COMPILED_UNIVERSAL_GIFT_PREFERENCES]);
 }
 
 function getGiftTier(
-  item: InventoryItem,
-  preferencePool: Array<Omit<NpcGiftPreferences, 'npc'>>,
+  item: IndexedGiftItem,
+  preferencePool: CompiledGiftPreference[],
 ): GiftTier | undefined {
-  if (preferencePool.some((preference) => matchesExcludedGift(item, preference))) {
+  if (preferencePool.some((preference) => matchesGiftList(item, preference.excluded))) {
     return undefined;
   }
 
@@ -133,14 +177,6 @@ function getGiftTier(
   return undefined;
 }
 
-function matchesExcludedGift(item: InventoryItem, preference: Omit<NpcGiftPreferences, 'npc'>): boolean {
-  return matchesGiftList(item, preference.hatedItemIds ?? [], preference.hatedItemNames ?? [])
-    || matchesGiftList(item, preference.dislikedItemIds ?? [], preference.dislikedItemNames ?? [])
-    || matchesGiftList(item, preference.excludedLovedItemIds ?? [], preference.excludedLovedItemNames ?? [])
-    || matchesGiftList(item, preference.excludedLikedItemIds ?? [], preference.excludedLikedItemNames ?? [])
-    || matchesGiftList(item, preference.excludedNeutralItemIds ?? [], preference.excludedNeutralItemNames ?? []);
-}
-
 function formatGiftTier(tier: GiftTier): GiftSuggestion['category'] {
   return GIFT_TIER_LABELS['zh-CN'][tier] as GiftSuggestion['category'];
 }
@@ -157,43 +193,72 @@ function compareGiftOptions(left: GiftOption, right: GiftOption): number {
 }
 
 function matchesGiftTier(
-  item: InventoryItem,
-  preference: Omit<NpcGiftPreferences, 'npc'>,
+  item: IndexedGiftItem,
+  preference: CompiledGiftPreference,
   tier: 'loved' | 'liked' | 'neutral',
 ): boolean {
-  const normalizedItemId = normalizeItemId(item.id);
-  const ids = tier === 'loved'
-    ? preference.lovedItemIds
+  const giftList = tier === 'loved'
+    ? preference.loved
     : tier === 'liked'
-      ? preference.likedItemIds ?? []
-      : preference.neutralItemIds ?? [];
-  const names = tier === 'loved'
-    ? preference.lovedItemNames
-    : tier === 'liked'
-      ? preference.likedItemNames ?? []
-      : preference.neutralItemNames ?? [];
+      ? preference.liked
+      : preference.neutral;
 
-  return matchesGiftList(item, ids, names);
+  return matchesGiftList(item, giftList);
 }
 
 function matchesGiftList(
-  item: InventoryItem,
-  ids: Array<number | string>,
-  names: string[],
+  item: IndexedGiftItem,
+  giftList: CompiledGiftList,
 ): boolean {
-  const normalizedItemId = normalizeItemId(item.id);
-  const catalogName = getItemNameById(item.id);
-  const normalizedItemName = item.name.trim().toLowerCase();
-  const itemNameId = catalogName === undefined ? getItemIdByName(item.name) : undefined;
-
-  return ids.some((id) => normalizeItemId(id) === normalizedItemId)
-    || (catalogName !== undefined && names.some((name) => normalizeGiftName(name) === normalizeGiftName(catalogName)))
-    || (catalogName === undefined && names.some((name) => normalizeGiftName(name) === normalizedItemName))
-    || (itemNameId !== undefined && ids.some((id) => normalizeItemId(id) === itemNameId));
+  return giftList.ids.has(item.normalizedItemId)
+    || (item.normalizedCatalogGiftName !== undefined && giftList.names.has(item.normalizedCatalogGiftName))
+    || (item.catalogGiftName === undefined && giftList.names.has(item.normalizedItemName))
+    || (item.itemNameId !== undefined && giftList.ids.has(item.itemNameId));
 }
 
 function normalizeGiftName(name: string): string {
   return name.trim().toLowerCase();
+}
+
+function createIndexedGiftItem(item: InventoryItem, language: AppLanguage): IndexedGiftItem {
+  const catalogGiftName = getItemNameById(item.id);
+  return {
+    item,
+    normalizedItemId: normalizeItemId(item.id),
+    catalogGiftName,
+    normalizedCatalogGiftName: catalogGiftName === undefined ? undefined : normalizeGiftName(catalogGiftName),
+    normalizedItemName: normalizeGiftName(item.name),
+    itemNameId: catalogGiftName === undefined ? getItemIdByName(item.name) : undefined,
+    displayName: formatItemName(item, language),
+  };
+}
+
+function compileGiftPreference(preference: Omit<NpcGiftPreferences, 'npc'>): CompiledGiftPreference {
+  return {
+    loved: compileGiftList(preference.lovedItemIds, preference.lovedItemNames),
+    liked: compileGiftList(preference.likedItemIds ?? [], preference.likedItemNames ?? []),
+    neutral: compileGiftList(preference.neutralItemIds ?? [], preference.neutralItemNames ?? []),
+    excluded: compileGiftList([
+      ...(preference.hatedItemIds ?? []),
+      ...(preference.dislikedItemIds ?? []),
+      ...(preference.excludedLovedItemIds ?? []),
+      ...(preference.excludedLikedItemIds ?? []),
+      ...(preference.excludedNeutralItemIds ?? []),
+    ], [
+      ...(preference.hatedItemNames ?? []),
+      ...(preference.dislikedItemNames ?? []),
+      ...(preference.excludedLovedItemNames ?? []),
+      ...(preference.excludedLikedItemNames ?? []),
+      ...(preference.excludedNeutralItemNames ?? []),
+    ]),
+  };
+}
+
+function compileGiftList(ids: Array<number | string>, names: string[]): CompiledGiftList {
+  return {
+    ids: new Set(ids.map((id) => normalizeItemId(id))),
+    names: new Set(names.map((name) => normalizeGiftName(name))),
+  };
 }
 
 function formatGiftOptionLabel(option: GiftOption): string {

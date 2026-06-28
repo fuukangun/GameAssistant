@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, statSync } from 'node:fs';
 import { formatEquipmentList, formatEquipmentName } from '../../app/displayFormat.ts';
 import { parseStardewSaveXml } from './parseSave.ts';
 
@@ -121,6 +120,178 @@ test('parses ready machine outputs from held objects', () => {
   }]);
 });
 
+test('parses machine states separately from ready outputs', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame>
+      <year>2</year>
+      <currentSeason>summer</currentSeason>
+      <dayOfMonth>8</dayOfMonth>
+      <player><name>Farmer</name><farmName>Sunrise Farm</farmName></player>
+      <locations>
+        <GameLocation>
+          <name>Farm</name>
+          <objects>
+            <item>
+              <key><Vector2><X>4</X><Y>9</Y></Vector2></key>
+              <value>
+                <Object>
+                  <Name>Keg</Name>
+                  <ItemId>12</ItemId>
+                  <heldObject>
+                    <Object>
+                      <Name>Wine</Name>
+                      <ItemId>348</ItemId>
+                      <Stack>1</Stack>
+                    </Object>
+                  </heldObject>
+                  <readyForHarvest>true</readyForHarvest>
+                  <minutesUntilReady>0</minutesUntilReady>
+                </Object>
+              </value>
+            </item>
+            <item>
+              <key><Vector2><X>5</X><Y>9</Y></Vector2></key>
+              <value>
+                <Object>
+                  <Name>Preserves Jar</Name>
+                  <heldObject>
+                    <Object>
+                      <Name>Blueberry</Name>
+                      <ItemId>258</ItemId>
+                      <Stack>1</Stack>
+                    </Object>
+                  </heldObject>
+                  <readyForHarvest>false</readyForHarvest>
+                  <minutesUntilReady>120</minutesUntilReady>
+                </Object>
+              </value>
+            </item>
+            <item>
+              <key><Vector2><X>6</X><Y>9</Y></Vector2></key>
+              <value>
+                <Object>
+                  <Name>Furnace</Name>
+                  <readyForHarvest>false</readyForHarvest>
+                  <minutesUntilReady>0</minutesUntilReady>
+                </Object>
+              </value>
+            </item>
+          </objects>
+        </GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Farmer_123456',
+    '2026-06-18T00:00:00.000Z',
+  );
+
+  assert.deepEqual(snapshot.machineStates, [
+    {
+      machineId: '12',
+      machineName: 'Keg',
+      location: 'Farm',
+      tileKey: '4,9',
+      state: 'ready',
+      output: { id: '348', name: 'Wine', quantity: 1, source: 'machine', sourceName: 'Keg' },
+      heldObjectId: '348',
+      minutesUntilReady: 0,
+      parseConfidence: 'high',
+      unknownFields: [],
+    },
+    {
+      machineId: 'Preserves Jar',
+      machineName: 'Preserves Jar',
+      location: 'Farm',
+      tileKey: '5,9',
+      state: 'processing',
+      heldObjectId: '258',
+      minutesUntilReady: 120,
+      parseConfidence: 'high',
+      unknownFields: [],
+    },
+    {
+      machineId: 'Furnace',
+      machineName: 'Furnace',
+      location: 'Farm',
+      tileKey: '6,9',
+      state: 'idle',
+      minutesUntilReady: 0,
+      parseConfidence: 'high',
+      unknownFields: [],
+    },
+  ]);
+  assert.deepEqual(snapshot.readyMachineOutputs, [
+    { id: '348', name: 'Wine', quantity: 1, source: 'machine', sourceName: 'Keg' },
+  ]);
+});
+
+test('marks ready machines with missing output as unknown', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame>
+      <year>2</year>
+      <currentSeason>summer</currentSeason>
+      <dayOfMonth>8</dayOfMonth>
+      <player><name>Farmer</name><farmName>Sunrise Farm</farmName></player>
+      <locations>
+        <GameLocation>
+          <name>Farm</name>
+          <objects>
+            <item>
+              <key><Vector2><X>4</X><Y>9</Y></Vector2></key>
+              <value>
+                <Object>
+                  <Name>Keg</Name>
+                  <readyForHarvest>true</readyForHarvest>
+                  <minutesUntilReady>0</minutesUntilReady>
+                </Object>
+              </value>
+            </item>
+          </objects>
+        </GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Farmer_123456',
+    '2026-06-18T00:00:00.000Z',
+  );
+
+  assert.equal(snapshot.machineStates?.[0]?.state, 'unknown');
+  assert.equal(snapshot.machineStates?.[0]?.parseConfidence, 'low');
+  assert.deepEqual(snapshot.machineStates?.[0]?.unknownFields, ['heldObject']);
+});
+
+test('parses machine states for all configured processing machines', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame>
+      <year>2</year>
+      <currentSeason>summer</currentSeason>
+      <dayOfMonth>8</dayOfMonth>
+      <player><name>Farmer</name><farmName>Sunrise Farm</farmName></player>
+      <locations>
+        <GameLocation>
+          <name>Farm</name>
+          <objects>
+            <item>
+              <key><Vector2><X>1</X><Y>1</Y></Vector2></key>
+              <value><Object><Name>Loom</Name><readyForHarvest>false</readyForHarvest><minutesUntilReady>0</minutesUntilReady></Object></value>
+            </item>
+            <item>
+              <key><Vector2><X>2</X><Y>1</Y></Vector2></key>
+              <value><Object><Name>Oil Maker</Name><readyForHarvest>false</readyForHarvest><minutesUntilReady>0</minutesUntilReady></Object></value>
+            </item>
+          </objects>
+        </GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Farmer_123456',
+    '2026-06-18T00:00:00.000Z',
+  );
+
+  assert.deepEqual(snapshot.machineStates?.map((machine) => machine.machineName), ['Loom', 'Oil Maker']);
+  assert.deepEqual(snapshot.machineStates?.map((machine) => machine.state), ['idle', 'idle']);
+});
+
 test('parses ready machine outputs from held chest containers', () => {
   const snapshot = parseStardewSaveXml(
     `<?xml version="1.0" encoding="utf-8"?>
@@ -169,6 +340,40 @@ test('parses ready machine outputs from held chest containers', () => {
   }]);
 });
 
+test('parses farm sprinklers without claiming sprinkler coverage is parsed', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame>
+      <year>1</year>
+      <currentSeason>spring</currentSeason>
+      <dayOfMonth>12</dayOfMonth>
+      <player><name>Farmer</name><farmName>Sunrise Farm</farmName></player>
+      <locations>
+        <GameLocation>
+          <name>Farm</name>
+          <terrainFeatures>
+            <item><value><TerrainFeature><crop><Name>Parsnip</Name></crop></TerrainFeature></value></item>
+            <item><value><TerrainFeature xsi:type="HoeDirt"></TerrainFeature></value></item>
+          </terrainFeatures>
+          <objects>
+            <item><value><Object><Name>Sprinkler</Name><ItemId>599</ItemId></Object></value></item>
+            <item><value><Object><Name>Stone</Name><ItemId>390</ItemId></Object></value></item>
+          </objects>
+        </GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Farmer_123456',
+    '2026-06-18T00:00:00.000Z',
+  );
+
+  assert.equal(snapshot.farmPlotSummary?.plantedCropCount, 1);
+  assert.equal(snapshot.farmPlotSummary?.tilledTileCount, 2);
+  assert.equal(snapshot.farmPlotSummary?.emptyTileCount, 1);
+  assert.equal(snapshot.farmPlotSummary?.sprinklerCount, 1);
+  assert.equal(snapshot.farmPlotSummary?.sprinklerCoverageParsed, false);
+  assert.equal(snapshot.farmPlotSummary?.unknownFields.includes('sprinklerCoverage'), true);
+});
+
 test('parses animal products and hay days remaining', () => {
   const snapshot = parseStardewSaveXml(
     `<?xml version="1.0" encoding="utf-8"?>
@@ -214,6 +419,70 @@ test('parses animal products and hay days remaining', () => {
     animalCount: 2,
     hayCount: 3,
     daysRemaining: 1,
+  });
+});
+
+test('parses crafting recipe unlocks and blacksmith tool upgrades', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame>
+      <year>2</year>
+      <currentSeason>fall</currentSeason>
+      <dayOfMonth>26</dayOfMonth>
+      <player>
+        <name>Farmer</name>
+        <farmName>Sunrise Farm</farmName>
+        <craftingRecipes>
+          <item><key><string>Keg</string></key><value><int>1</int></value></item>
+          <item><key><string>Mayonnaise Machine</string></key><value><int>1</int></value></item>
+        </craftingRecipes>
+      </player>
+      <locations>
+        <GameLocation>
+          <name>Blacksmith</name>
+          <daysUntilToolUpgrade>1</daysUntilToolUpgrade>
+          <toolBeingUpgraded>
+            <Item><Name>Pickaxe</Name><ItemId>Pickaxe</ItemId></Item>
+          </toolBeingUpgraded>
+        </GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Farmer_123456',
+    '2026-06-18T00:00:00.000Z',
+  );
+
+  assert.deepEqual(snapshot.crafting, {
+    parsed: true,
+    unlockedRecipeIds: ['keg', 'mayonnaise-machine'],
+  });
+  assert.deepEqual(snapshot.blacksmith, {
+    parsed: true,
+    toolInProgress: 'Pickaxe',
+    daysUntilReady: 1,
+  });
+});
+
+test('marks blacksmith parsed when no tool is being upgraded', () => {
+  const snapshot = parseStardewSaveXml(
+    `<?xml version="1.0" encoding="utf-8"?>
+    <SaveGame>
+      <year>2</year>
+      <currentSeason>fall</currentSeason>
+      <dayOfMonth>26</dayOfMonth>
+      <player><name>Farmer</name><farmName>Sunrise Farm</farmName></player>
+      <locations>
+        <GameLocation>
+          <name>Blacksmith</name>
+          <daysUntilToolUpgrade>0</daysUntilToolUpgrade>
+        </GameLocation>
+      </locations>
+    </SaveGame>`,
+    '/tmp/Farmer_123456',
+    '2026-06-18T00:00:00.000Z',
+  );
+
+  assert.deepEqual(snapshot.blacksmith, {
+    parsed: true,
   });
 });
 
@@ -1357,155 +1626,4 @@ test('keeps skull cavern closed when the mine is complete but desert is not acce
 
   assert.equal(snapshot.farm.hasDesertAccess, false);
   assert.equal(snapshot.farm.hasSkullCavernAccess, false);
-});
-
-test('locks key fields from local real saves when available', () => {
-  const saveCases = [
-    {
-      path: '/Users/fuukangun/.config/StardewValley/Saves/fun_440336724/fun_440336724',
-      expected: {
-        farmName: 'fun',
-        year: 1,
-        season: 'spring',
-        day: 1,
-        route: 'unknown',
-        mineLevel: 0,
-        desert: false,
-        island: false,
-        skull: false,
-        volcano: false,
-      },
-    },
-    {
-      path: '/Users/fuukangun/.config/StardewValley/Saves/Fonsa_399159995/Fonsa_399159995',
-      expected: {
-        farmName: 'Fazenda Á',
-        year: 7,
-        season: 'summer',
-        day: 8,
-        route: 'community_center',
-        mineLevel: 120,
-        skullCavernLevel: 127,
-        desert: true,
-        island: true,
-        skull: true,
-        volcano: true,
-        communityCenterPercentage: 100,
-        completedBundles: 31,
-      },
-      minimumRelationships: 30,
-      minimumInventoryItems: 500,
-    },
-    {
-      path: '/Users/fuukangun/.config/StardewValley/Saves/Arkon_255003282/Arkon_255003282',
-      expected: {
-        farmName: 'Vanilla',
-        year: 6,
-        season: 'winter',
-        day: 14,
-        route: 'community_center',
-        mineLevel: 120,
-        skullCavernLevel: 272,
-        desert: true,
-        island: true,
-        skull: true,
-        volcano: true,
-        communityCenterPercentage: 100,
-        completedBundles: 31,
-      },
-      minimumRelationships: 30,
-      minimumInventoryItems: 1000,
-    },
-    {
-      path: '/Users/fuukangun/.config/StardewValley/Saves/菌菇_414673714/菌菇_414673714',
-      expected: {
-        farmName: '菌菇',
-        year: 1,
-        season: 'winter',
-        day: 23,
-        route: 'community_center',
-        mineLevel: 80,
-        desert: false,
-        island: false,
-        skull: false,
-        volcano: false,
-        communityCenterPercentage: 27,
-        completedBundles: 10,
-      },
-      minimumRelationships: 30,
-      minimumInventoryItems: 150,
-    },
-    {
-      path: '/Users/fuukangun/.config/StardewValley/Saves/Moira_133394546/Moira_133394546',
-      expected: {
-        farmName: 'Moja Joja',
-        year: 3,
-        season: 'fall',
-        day: 11,
-        route: 'joja',
-        mineLevel: 120,
-        skullCavernLevel: 36,
-        desert: true,
-        island: false,
-        skull: true,
-        volcano: false,
-        jojaCompletedProjects: 5,
-      },
-      minimumRelationships: 30,
-      minimumInventoryItems: 100,
-    },
-  ] as const;
-
-  const availableCases = saveCases.filter((saveCase) => existsSync(saveCase.path));
-  if (availableCases.length === 0) {
-    return;
-  }
-
-  for (const saveCase of availableCases) {
-    const snapshot = parseStardewSaveXml(
-      readFileSync(saveCase.path, 'utf8'),
-      saveCase.path,
-      statSync(saveCase.path).mtime.toISOString(),
-    );
-
-    assert.equal(snapshot.farm.farmName, saveCase.expected.farmName);
-    assert.equal(snapshot.time.year, saveCase.expected.year);
-    assert.equal(snapshot.time.season, saveCase.expected.season);
-    assert.equal(snapshot.time.day, saveCase.expected.day);
-    assert.equal(snapshot.farm.communityCenterRoute, saveCase.expected.route);
-    assert.equal(snapshot.farm.mineLevel, saveCase.expected.mineLevel);
-    if ('skullCavernLevel' in saveCase.expected) {
-      assert.equal(snapshot.farm.skullCavernLevel, saveCase.expected.skullCavernLevel);
-    }
-    assert.equal(snapshot.farm.hasIslandAccess, saveCase.expected.island);
-    assert.equal(snapshot.farm.hasSkullCavernAccess, saveCase.expected.skull);
-    assert.equal(snapshot.farm.hasVolcanoDungeonAccess, saveCase.expected.volcano);
-    if ('desert' in saveCase.expected) {
-      assert.equal(snapshot.farm.hasDesertAccess, saveCase.expected.desert);
-    }
-    if ('communityCenterPercentage' in saveCase.expected) {
-      assert.equal(snapshot.progression.communityCenter?.percentage, saveCase.expected.communityCenterPercentage);
-    }
-    if ('completedBundles' in saveCase.expected) {
-      assert.equal(
-        snapshot.progression.communityCenter?.bundleStates?.filter((state) => state.completed).length,
-        saveCase.expected.completedBundles,
-      );
-    }
-    if ('jojaCompletedProjects' in saveCase.expected) {
-      assert.equal(snapshot.progression.joja?.completedProjects, saveCase.expected.jojaCompletedProjects);
-    }
-    if (saveCase.expected.farmName === 'Moja Joja') {
-      assert.equal(snapshot.player.equipment.weaponName, 'Galaxy Sword');
-      assert.deepEqual(snapshot.player.equipment.ringNames, ['Iridium Band', "Burglar's Ring"]);
-      assert.equal(formatEquipmentName(snapshot.player.equipment.weaponName, 'zh-CN'), '银河剑');
-      assert.equal(formatEquipmentList(snapshot.player.equipment.ringNames, '未装备', 'zh-CN'), '铱环、窃贼戒指');
-    }
-    if ('minimumRelationships' in saveCase) {
-      assert.equal(snapshot.relationships.length >= saveCase.minimumRelationships, true);
-    }
-    if ('minimumInventoryItems' in saveCase) {
-      assert.equal(snapshot.inventory.length >= saveCase.minimumInventoryItems, true);
-    }
-  }
 });

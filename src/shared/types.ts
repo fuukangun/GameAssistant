@@ -43,10 +43,39 @@ export interface StardewSaveSnapshot {
   inventory: InventoryItem[];
   crops: CropSummary[];
   readyMachineOutputs: ProducedItemSummary[];
+  machineStates?: MachineStateSummary[];
   animalProducts: ProducedItemSummary[];
   animalFeed: AnimalFeedSummary;
+  crafting?: CraftingSummary;
+  blacksmith?: BlacksmithSummary;
   progression: ProgressionSummary;
   relationships: RelationshipSummary[];
+}
+
+export interface CraftingSummary {
+  parsed: boolean;
+  unlockedRecipeIds?: string[];
+}
+
+export interface BlacksmithSummary {
+  parsed: boolean;
+  toolInProgress?: string;
+  daysUntilReady?: number;
+}
+
+export type MachineStateKind = 'ready' | 'processing' | 'idle' | 'unknown';
+
+export interface MachineStateSummary {
+  machineId?: number | string;
+  machineName: string;
+  location?: string;
+  tileKey?: string;
+  state: MachineStateKind;
+  output?: ProducedItemSummary;
+  heldObjectId?: number | string;
+  minutesUntilReady?: number;
+  parseConfidence: Confidence;
+  unknownFields: string[];
 }
 
 export interface FarmPlotSummary {
@@ -60,6 +89,9 @@ export interface FarmPlotSummary {
    * This does not mean every farmable tile on the map is empty.
    */
   emptyTileCount?: number;
+  sprinklerCount?: number;
+  sprinklerCoverageParsed?: boolean;
+  wateredTileCount?: number;
   parsedFields: string[];
   unknownFields: string[];
 }

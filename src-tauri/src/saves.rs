@@ -13,6 +13,7 @@ pub struct SaveEntry {
   pub path: String,
   pub last_modified: String,
   pub parse_status: String,
+  pub player_name: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -44,14 +45,17 @@ pub fn scan_saves_in_directory(root_path: &Path) -> Result<Vec<SaveEntry>, Strin
       continue;
     }
 
-    let metadata = fs::metadata(&folder_path)
-      .map_err(|error| format!("无法读取存档目录信息：{error}"))?;
+    let file_path = main_save_file_path(&folder_path, &folder_name);
+    let metadata = fs::metadata(&file_path)
+      .map_err(|error| format!("无法读取存档文件信息：{error}"))?;
+    let save_names = read_save_names(&file_path, &folder_name);
     saves.push(SaveEntry {
       id: folder_name.clone(),
-      name: read_display_name(&folder_path, &folder_name),
+      name: save_names.farm_name,
       path: folder_path.to_string_lossy().to_string(),
       last_modified: format_system_time(metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH)),
       parse_status: "partial".to_string(),
+      player_name: save_names.player_name,
     });
   }
 
@@ -125,16 +129,27 @@ fn get_display_name(folder_name: &str) -> String {
     .unwrap_or_else(|| folder_name.to_string())
 }
 
-fn read_display_name(folder_path: &Path, folder_name: &str) -> String {
-  let file_path = main_save_file_path(folder_path, folder_name);
+struct SaveNames {
+  farm_name: String,
+  player_name: Option<String>,
+}
+
+fn read_save_names(file_path: &Path, folder_name: &str) -> SaveNames {
   let fallback_name = get_display_name(folder_name);
   let Ok(xml) = fs::read_to_string(file_path) else {
-    return fallback_name;
+    return SaveNames {
+      farm_name: fallback_name,
+      player_name: None,
+    };
   };
 
-  extract_xml_text(&xml, "farmName")
-    .filter(|name| !name.is_empty())
-    .unwrap_or(fallback_name)
+  SaveNames {
+    farm_name: extract_xml_text(&xml, "farmName")
+      .filter(|name| !name.is_empty())
+      .unwrap_or(fallback_name),
+    player_name: extract_xml_text(&xml, "name")
+      .filter(|name| !name.is_empty()),
+  }
 }
 
 fn main_save_file_path(folder_path: &Path, folder_name: &str) -> PathBuf {
@@ -211,6 +226,7 @@ mod tests {
     assert_eq!(saves.len(), 1);
     assert_eq!(saves[0].id, "Arkon_123456");
     assert_eq!(saves[0].name, "Vanilla");
+    assert_eq!(saves[0].player_name.as_deref(), Some("Arkon"));
 
     remove_dir_all(root).unwrap();
   }

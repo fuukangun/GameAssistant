@@ -1,4 +1,4 @@
-import type { InventoryItem, PlannerInput, PlanRecommendation, ProducedItemSummary, RecommendationItem, SaveTime, Season } from '../../shared/types.ts';
+import type { InventoryItem, MachineStateSummary, PlannerInput, PlanRecommendation, ProducedItemSummary, RecommendationItem, SaveTime, Season } from '../../shared/types.ts';
 import { BIRTHDAYS, FESTIVALS } from '../data/calendar.ts';
 import { createCommunityCenterSummary } from '../data/communityCenter.ts';
 import { BASIC_PLANTING_OPTIONS, calculateConservativeCropRoi } from '../data/crops.ts';
@@ -436,7 +436,9 @@ function buildPlantingActions(input: PlannerInput): RecommendationItem[] {
   return options.map((crop) => {
     const roi = calculateConservativeCropRoi(crop, input.planDate);
     const plotStatus = createFarmPlotStatusSummary(input.snapshot);
-    const sprinklerParsed = input.snapshot.inventory.some(isSprinklerItem);
+    const farmSprinklerCount = input.snapshot.farmPlotSummary?.sprinklerCount;
+    const hasInventorySprinkler = input.snapshot.inventory.some(isSprinklerItem);
+    const hasParsedSprinklerCoverage = input.snapshot.farmPlotSummary?.sprinklerCoverageParsed === true;
     const seed = input.snapshot.inventory.find((item) => {
       const itemId = normalizeItemId(item.id);
       return crop.seedIds.some((seedId) => normalizeItemId(seedId) === itemId)
@@ -464,11 +466,23 @@ function buildPlantingActions(input: PlannerInput): RecommendationItem[] {
         value: `已耕空地 ${plotStatus.emptyTilledTileCount} 块`,
       });
     }
-    if (sprinklerParsed) {
+    if (hasParsedSprinklerCoverage) {
       evidence.push({
         source: 'save',
         label: '洒水条件',
         value: '检测到洒水器',
+      });
+    } else if (hasInventorySprinkler) {
+      evidence.push({
+        source: 'save',
+        label: '洒水条件',
+        value: '库存有洒水器，未确认覆盖地块',
+      });
+    } else if (farmSprinklerCount !== undefined && farmSprinklerCount > 0) {
+      evidence.push({
+        source: 'save',
+        label: '洒水条件',
+        value: `检测到洒水器 ${farmSprinklerCount} 个`,
       });
     }
 
@@ -476,7 +490,7 @@ function buildPlantingActions(input: PlannerInput): RecommendationItem[] {
       hasSeed: Boolean(seed),
       hasParsedShop: true,
       hasParsedEmptyPlots: plotStatus.emptyTilledTileCount !== undefined,
-      hasParsedSprinkler: sprinklerParsed,
+      hasParsedSprinkler: hasParsedSprinklerCoverage,
     });
 
     return {
@@ -507,7 +521,7 @@ function buildPlantingUncertainty(status: {
     ...status.hasParsedShop ? [] : ['商店是否开放'],
     ...status.hasSeed ? [] : ['是否已拥有种子'],
     ...status.hasParsedEmptyPlots ? [] : ['是否有足够空地'],
-    ...status.hasParsedSprinkler ? [] : ['洒水条件'],
+    ...status.hasParsedSprinkler ? [] : ['洒水覆盖'],
   ];
   return missing.length > 0 ? [`未解析${missing.join('、')}。`] : [];
 }
@@ -633,12 +647,15 @@ function buildProcessingActions(input: PlannerInput): RecommendationItem[] {
 
   return PROCESSING_RULES.flatMap<RecommendationItem>((rule) => {
     const machine = findInventoryItem(inventory, [...rule.machineIds, ...rule.machineNames]);
+    const machineStates = findMachineStates(input.snapshot.machineStates, rule);
+    const machineState = selectMachineState(machineStates);
     const ingredient = findProcessingIngredient(inventory, rule);
     if (!ingredient) {
       return [];
     }
 
-    if (!machine) {
+    if (!machine && !machineState) {
+      const craftableStatus = formatCraftingStatus(input, rule);
       return [{
         id: `complete-machine-${rule.id}`,
         title: rule.completeMachineTitle ?? `补齐${rule.machineNames[0] ?? rule.id}`,
@@ -649,9 +666,14 @@ function buildProcessingActions(input: PlannerInput): RecommendationItem[] {
         evidence: [
           { source: 'static_data', label: '缺少设备', value: rule.machineNames[0] ?? rule.id },
           { source: 'save', label: '可加工原料', value: formatInventoryItemStack(ingredient) },
+          { source: 'derived', label: '制作状态', value: craftableStatus },
         ],
-        uncertainty: ['配方解锁状态、制作材料缺口和可购买状态尚未逐项解析。'],
+        uncertainty: buildCraftingUncertainty(input, rule),
       } satisfies RecommendationItem];
+    }
+
+    if (machineStates.length > 0 && (machineState?.state === 'processing' || machineState?.state === 'ready')) {
+      return [];
     }
 
     const extraMaterial = rule.extraMaterialIds || rule.extraMaterialNames
@@ -662,24 +684,188 @@ function buildProcessingActions(input: PlannerInput): RecommendationItem[] {
     }
 
     const evidence: RecommendationItem['evidence'] = [
-      { source: 'save', label: '加工设备', value: formatInventoryItemStack(machine) },
       { source: 'save', label: '可加工原料', value: formatInventoryItemStack(ingredient) },
     ];
+    if (machine) {
+      evidence.unshift({ source: 'save', label: '加工设备', value: formatInventoryItemStack(machine) });
+    }
+    if (machineState) {
+      evidence.push({ source: 'save', label: '机器状态', value: formatMachineStateEvidence(machineState) });
+    }
     if (extraMaterial) {
       evidence.push({ source: 'save', label: '辅料', value: formatInventoryItemStack(extraMaterial) });
     }
+    if (rule.processingMinutes !== undefined) {
+      evidence.push({ source: 'static_data', label: '加工耗时', value: formatProcessingDuration(rule.processingMinutes) });
+    }
+    if (rule.valueEstimateGold !== undefined) {
+      evidence.push({ source: 'static_data', label: '加工收益', value: `约${rule.valueEstimateGold}金/个` });
+    }
+    const uncertainty = [
+      ...buildProcessingRuleUncertainty(rule, machineState),
+      ...!machineState && rule.confidence === 'high'
+        ? ['机器状态未解析，无法确认当前设备是否空闲。']
+        : [],
+      ...(machineState?.state === 'unknown'
+        ? [`机器状态未确认：${formatUnknownFields(machineState.unknownFields)}`]
+        : []),
+    ];
+    const confidence = (machineState?.state === 'unknown' || (!machineState && rule.confidence === 'high')) && rule.confidence === 'high'
+      ? 'medium'
+      : rule.confidence;
 
     return [{
       id: `process-${rule.id}`,
       title: rule.title,
       category: 'profit',
       priority: input.goal === 'money' ? rule.priorityForMoneyGoal : rule.priorityDefault,
-      confidence: rule.confidence,
+      confidence,
       reason: rule.reason,
       evidence,
-      uncertainty: [rule.uncertainty],
+      uncertainty,
     } satisfies RecommendationItem];
   });
+}
+
+function buildProcessingRuleUncertainty(
+  rule: ProcessingRule,
+  machineState: MachineStateSummary | undefined,
+): string[] {
+  let uncertainty = rule.uncertainty;
+  if (machineState && machineState.state !== 'unknown') {
+    uncertainty = uncertainty
+      .replace('机器当前占用状态和', '')
+      .replace('机器当前占用状态', '')
+      .replace('加工排队和', '');
+  }
+  if (rule.processingMinutes !== undefined) {
+    uncertainty = uncertainty.replace('加工耗时、', '');
+  }
+  if (rule.valueEstimateGold !== undefined) {
+    uncertainty = uncertainty
+      .replace('和精确增值倍率', '')
+      .replace('精确增值倍率', '')
+      .replace('尚未逐项计算原料收益', '原料收益仅按保守静态值估算');
+  }
+
+  return cleanupUncertaintyText(uncertainty);
+}
+
+function cleanupUncertaintyText(text: string): string[] {
+  const cleaned = text
+    .replace(/^、+|、+$/g, '')
+    .replace(/^和/, '')
+    .replace(/^尚未解析，请按农场实际机器空闲情况调整。$/, '')
+    .replace(/^尚未逐项解析。$/, '')
+    .replace(/^请按农场实际机器空闲情况调整。$/, '')
+    .replace(/^。$/, '')
+    .trim();
+
+  return cleaned.length > 0 ? [cleaned] : [];
+}
+
+function formatCraftingStatus(input: PlannerInput, rule: ProcessingRule): string {
+  if (!input.snapshot.crafting?.parsed) {
+    return '配方、材料缺口和购买状态未解析';
+  }
+
+  const isUnlocked = input.snapshot.crafting.unlockedRecipeIds?.includes(rule.id) === true;
+  const materialStatus = formatCraftingMaterialStatus(input.snapshot.inventory, rule);
+  const purchaseStatus = rule.purchasable === undefined
+    ? '购买状态未解析'
+    : rule.purchasable ? '可购买' : '不可直接购买';
+  if (materialStatus) {
+    return isUnlocked
+      ? `配方已解锁，${materialStatus}；${purchaseStatus}`
+      : `配方未确认已解锁，${materialStatus}；${purchaseStatus}`;
+  }
+
+  return isUnlocked
+    ? '配方已解析为已解锁；材料缺口和购买状态未解析'
+    : '配方已解析；未确认已解锁，材料缺口和购买状态未解析';
+}
+
+function buildCraftingUncertainty(input: PlannerInput, rule: ProcessingRule): string[] {
+  if (input.snapshot.crafting?.parsed && rule.craftMaterials && rule.purchasable !== undefined) {
+    return [];
+  }
+
+  if (input.snapshot.crafting?.parsed) {
+    return ['制作材料缺口和可购买状态尚未逐项解析。'];
+  }
+
+  return ['配方解锁状态、制作材料缺口和可购买状态尚未逐项解析。'];
+}
+
+function formatCraftingMaterialStatus(inventory: InventoryItem[], rule: ProcessingRule): string | undefined {
+  if (!rule.craftMaterials) {
+    return undefined;
+  }
+
+  const missing = rule.craftMaterials.flatMap((material) => {
+    const owned = countInventoryItems(inventory, [material.itemId, material.itemName]);
+    const shortage = material.quantity - owned;
+    return shortage > 0 ? [`${material.itemName}缺${shortage}`] : [];
+  });
+
+  return missing.length > 0 ? `材料不足：${missing.join('、')}` : '材料已满足';
+}
+
+function countInventoryItems(inventory: InventoryItem[], candidates: Array<number | string>): number {
+  return inventory
+    .filter((item) => candidates.some((candidate) => {
+      return normalizeItemId(candidate) === normalizeItemId(item.id)
+        || item.name === String(candidate)
+        || formatItemName(item, 'zh-CN') === String(candidate);
+    }))
+    .reduce((sum, item) => sum + item.stack, 0);
+}
+
+function formatProcessingDuration(minutes: number): string {
+  if (minutes < 60) {
+    return `${minutes}分钟`;
+  }
+
+  if (minutes % 60 === 0) {
+    return `${minutes / 60}小时`;
+  }
+
+  return `${Math.floor(minutes / 60)}小时${minutes % 60}分钟`;
+}
+
+function findMachineStates(
+  machineStates: MachineStateSummary[] | undefined,
+  rule: ProcessingRule,
+): MachineStateSummary[] {
+  if (!machineStates || machineStates.length === 0) {
+    return [];
+  }
+
+  return machineStates.filter((machine) => {
+    const machineId = machine.machineId === undefined ? undefined : normalizeItemId(machine.machineId);
+    return (machineId !== undefined && rule.machineIds.some((id) => normalizeItemId(id) === machineId))
+      || rule.machineNames.includes(machine.machineName);
+  });
+}
+
+function selectMachineState(machineStates: MachineStateSummary[]): MachineStateSummary | undefined {
+  return machineStates.find((machine) => machine.state === 'idle')
+    ?? machineStates.find((machine) => machine.state === 'unknown')
+    ?? machineStates[0];
+}
+
+function formatMachineStateEvidence(machine: MachineStateSummary): string {
+  const labels: Record<MachineStateSummary['state'], string> = {
+    ready: '已有产物可收取',
+    processing: '加工中',
+    idle: '空闲',
+    unknown: '状态未确认',
+  };
+  return `${machine.machineName}${labels[machine.state]}`;
+}
+
+function formatUnknownFields(fields: string[]): string {
+  return fields.length > 0 ? fields.join('、') : '存档字段不完整';
 }
 
 function buildCommunityCenterActions(input: PlannerInput): RecommendationItem[] {
@@ -792,6 +978,10 @@ function buildUpgradeActions(input: PlannerInput): RecommendationItem[] {
       } satisfies RecommendationItem];
     }
 
+    if (rule.kind === 'tool' && input.snapshot.blacksmith?.parsed === true && input.snapshot.blacksmith.toolInProgress) {
+      return [];
+    }
+
     const equipmentName = rule.slot ? input.snapshot.player.equipment[rule.slot] : undefined;
     if (typeof equipmentName !== 'string' || !isBaseToolName(equipmentName, rule.baseNames ?? [])) {
       return [];
@@ -806,6 +996,7 @@ function buildUpgradeActions(input: PlannerInput): RecommendationItem[] {
 
     const evidence: RecommendationItem['evidence'] = [
       { source: 'save', label: '当前装备', value: equipmentName },
+      { source: 'static_data', label: '下一等级', value: rule.targetName ?? rule.title },
     ];
     if (material) {
       evidence.push({ source: 'save', label: '所需材料', value: formatInventoryItemStack(material) });
@@ -813,6 +1004,7 @@ function buildUpgradeActions(input: PlannerInput): RecommendationItem[] {
     evidence.push(
       { source: 'save', label: '当前金币', value: `${money}金` },
       { source: 'static_data', label: '升级费用', value: `${rule.goldCost}金` },
+      { source: 'derived', label: '铁匠铺状态', value: formatBlacksmithStatus(input) },
     );
 
     return [{
@@ -820,12 +1012,28 @@ function buildUpgradeActions(input: PlannerInput): RecommendationItem[] {
       title: rule.title,
       category: 'progress',
       priority: input.goal === 'money' ? rule.priorityForMoneyGoal : rule.priorityDefault,
-      confidence: rule.confidence,
+      confidence: rule.kind === 'tool' && input.snapshot.blacksmith?.parsed !== true && rule.confidence === 'high' ? 'medium' : rule.confidence,
       reason: rule.reason,
       evidence,
-      uncertainty: rule.uncertainty,
+      uncertainty: [
+        ...(rule.kind === 'tool' && input.snapshot.blacksmith?.parsed === true ? [] : rule.uncertainty),
+        ...input.snapshot.blacksmith?.parsed === true ? [] : ['铁匠铺占用状态尚未从存档稳定解析，交付前请按游戏内确认。'],
+      ],
     } satisfies RecommendationItem];
   });
+}
+
+function formatBlacksmithStatus(input: PlannerInput): string {
+  const blacksmith = input.snapshot.blacksmith;
+  if (!blacksmith?.parsed) {
+    return '未解析';
+  }
+
+  if (blacksmith.toolInProgress) {
+    return `${blacksmith.toolInProgress}处理中${blacksmith.daysUntilReady === undefined ? '' : `，${blacksmith.daysUntilReady}天后完成`}`;
+  }
+
+  return '未发现正在处理的工具';
 }
 
 function buildJojaActions(input: PlannerInput): RecommendationItem[] {
@@ -989,7 +1197,12 @@ function isExcludedProcessingIngredient(item: InventoryItem): boolean {
 }
 
 function isBaseToolName(value: string, candidates: string[]): boolean {
-  return candidates.some((candidate) => value === candidate || value.includes(candidate));
+  const normalizedValue = normalizeToolName(value);
+  return candidates.some((candidate) => normalizedValue === normalizeToolName(candidate));
+}
+
+function normalizeToolName(value: string): string {
+  return value.trim().toLowerCase();
 }
 
 function formatPlanDate(input: PlannerInput): string {

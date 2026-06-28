@@ -222,6 +222,68 @@ a {
   cursor: pointer;
 }
 
+.save-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 6px;
+  border: 1px solid #49684f;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.save-row[data-selected="true"],
+.save-row:hover {
+  background: #375640;
+}
+
+.save-row .save-button {
+  border: 0;
+  border-radius: 8px 0 0 8px;
+}
+
+.save-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-right: 8px;
+}
+
+.save-source-badge {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  border: 1px solid rgba(229, 240, 229, 0.34);
+  border-radius: 999px;
+  padding: 2px 6px;
+  color: #e5f0e5;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(229, 240, 229, 0.28);
+  border-radius: 7px;
+  background: rgba(229, 240, 229, 0.08);
+  color: #edf5ea;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: rgba(229, 240, 229, 0.16);
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
 .import-button {
   display: block;
   background: #e5f0e5;
@@ -234,12 +296,10 @@ a {
   background: #f1f7ef;
 }
 
-.save-button[data-selected="true"],
-.save-button:hover {
-  background: #375640;
-}
-
 .save-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 800;
 }
 

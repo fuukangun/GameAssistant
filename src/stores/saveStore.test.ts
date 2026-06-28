@@ -70,6 +70,110 @@ test('replaces an existing save when an imported save has the same path', () => 
   assert.equal(store.getState().selectedSaveId, '123456');
 });
 
+test('keeps manual imports when scanned saves refresh', () => {
+  const store = createSaveStore();
+  store.getState().setSaves([
+    {
+      id: 'Table_123',
+      name: 'Table',
+      path: '/Users/player/Stardew/Saves/Table_123',
+      lastModified: '2026-06-18T00:00:00.000Z',
+      parseStatus: 'partial',
+      source: 'scanned',
+    },
+  ]);
+  store.getState().upsertSave({
+    id: 'manual:/Users/player/Desktop/saving/Poison_456/Poison_456',
+    name: 'Poison Farm',
+    path: '/Users/player/Desktop/saving/Poison_456/Poison_456',
+    lastModified: '2026-06-18T01:00:00.000Z',
+    parseStatus: 'ok',
+    source: 'manual',
+  });
+
+  store.getState().setSaves([
+    {
+      id: 'Table_123',
+      name: 'Table',
+      path: '/Users/player/Stardew/Saves/Table_123',
+      lastModified: '2026-06-18T02:00:00.000Z',
+      parseStatus: 'partial',
+      source: 'scanned',
+    },
+    {
+      id: 'Poison_456',
+      name: 'Poison',
+      path: '/Users/player/Stardew/Saves/Poison_456',
+      lastModified: '2026-06-18T02:00:00.000Z',
+      parseStatus: 'partial',
+      source: 'scanned',
+    },
+  ]);
+
+  assert.deepEqual(store.getState().saves.map((save) => [save.id, save.source]), [
+    ['Table_123', 'scanned'],
+    ['Poison_456', 'scanned'],
+    ['manual:/Users/player/Desktop/saving/Poison_456/Poison_456', 'manual'],
+  ]);
+});
+
+test('keeps manual import even when a scanned save has the same path', () => {
+  const store = createSaveStore();
+  store.getState().upsertSave({
+    id: 'manual:/tmp/Saves/Poison_456',
+    name: 'Poison Farm',
+    path: '/tmp/Saves/Poison_456',
+    lastModified: '2026-06-18T01:00:00.000Z',
+    parseStatus: 'ok',
+    source: 'manual',
+  });
+
+  store.getState().setSaves([
+    {
+      id: 'Poison_456',
+      name: 'Poison',
+      path: '/tmp/Saves/Poison_456',
+      lastModified: '2026-06-18T02:00:00.000Z',
+      parseStatus: 'partial',
+      source: 'scanned',
+    },
+  ]);
+
+  assert.deepEqual(store.getState().saves.map((save) => [save.id, save.source]), [
+    ['Poison_456', 'scanned'],
+    ['manual:/tmp/Saves/Poison_456', 'manual'],
+  ]);
+});
+
+test('does not replace scanned save when manual import has same game unique id', () => {
+  const store = createSaveStore();
+  store.getState().setSaves([
+    {
+      id: 'Poison_456',
+      name: 'Poison',
+      path: '/Users/player/Stardew/Saves/Poison_456',
+      lastModified: '2026-06-18T00:00:00.000Z',
+      parseStatus: 'partial',
+      source: 'scanned',
+    },
+  ]);
+
+  store.getState().upsertSave({
+    id: 'manual:/Users/player/Desktop/saving/Poison_456/Poison_456',
+    name: 'Poison Farm',
+    path: '/Users/player/Desktop/saving/Poison_456/Poison_456',
+    lastModified: '2026-06-18T01:00:00.000Z',
+    parseStatus: 'ok',
+    source: 'manual',
+  });
+
+  assert.deepEqual(store.getState().saves.map((save) => [save.id, save.source]), [
+    ['manual:/Users/player/Desktop/saving/Poison_456/Poison_456', 'manual'],
+    ['Poison_456', 'scanned'],
+  ]);
+  assert.equal(store.getState().selectedSaveId, 'manual:/Users/player/Desktop/saving/Poison_456/Poison_456');
+});
+
 test('keeps the existing save order when updating a scanned save', () => {
   const store = createSaveStore();
   store.getState().setSaves([
@@ -103,4 +207,24 @@ test('removes a missing manual import by folder path and updates selected save',
 
   assert.deepEqual(store.getState().saves.map((save) => save.id), ['A_1']);
   assert.equal(store.getState().selectedSaveId, 'A_1');
+});
+
+test('removes a manual import by id without removing scanned copies', () => {
+  const store = createSaveStore();
+  store.getState().setSaves([
+    { id: 'Poison_456', name: 'Poison', path: '/tmp/Saves/Poison_456', lastModified: '2026-06-18T02:00:00.000Z', parseStatus: 'ok', source: 'scanned' },
+  ]);
+  store.getState().upsertSave({
+    id: 'manual:/tmp/Desktop/saving/Poison_456/Poison_456',
+    name: 'Poison Farm',
+    path: '/tmp/Desktop/saving/Poison_456/Poison_456',
+    lastModified: '2026-06-18T01:00:00.000Z',
+    parseStatus: 'ok',
+    source: 'manual',
+  });
+
+  store.getState().removeSaveById('manual:/tmp/Desktop/saving/Poison_456/Poison_456');
+
+  assert.deepEqual(store.getState().saves.map((save) => save.id), ['Poison_456']);
+  assert.equal(store.getState().selectedSaveId, 'Poison_456');
 });

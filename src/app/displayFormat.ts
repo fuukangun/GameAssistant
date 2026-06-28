@@ -82,6 +82,10 @@ export function formatNpcName(name: string, language: AppLanguage = 'zh-CN'): st
   return language === 'zh-CN' ? DISPLAY_FORMAT_LABELS.npcNameLabels[name] ?? name : name;
 }
 
+export function formatFriendshipPoints(relationship: Pick<RelationshipSummary, 'points' | 'hearts'>): string {
+  return `${relationship.points} / ${relationship.hearts}❤️`;
+}
+
 export function sortRelationshipsByFriendship(relationships: RelationshipSummary[]): RelationshipSummary[] {
   return [...relationships].sort((left, right) => right.points - left.points);
 }

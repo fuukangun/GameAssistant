@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { COMMUNITY_CENTER_BUNDLES } from './communityCenter.ts';
 import { BASIC_PLANTING_OPTIONS } from './crops.ts';
 import { FISH_CATALOG } from './fish.ts';
-import { getItemNameById, ITEM_CATALOG } from './items.ts';
+import { getItemIdByName, getItemNameById, ITEM_CATALOG } from './items.ts';
 import itemCatalog from './itemCatalog.json' with { type: 'json' };
 import { EQUIPMENT_NAME_LABELS, getEquipmentNameLabel } from './equipmentNames.ts';
 import equipmentNames from './equipmentNames.json' with { type: 'json' };
 import { validateStaticDataFile } from './staticData.ts';
+import { createStaticDataCoverageReport } from './staticDataCoverage.ts';
 
 test('accepts a valid static data file', () => {
   const result = validateStaticDataFile({
@@ -22,6 +23,11 @@ test('accepts a valid static data file', () => {
 
 test('loads item catalog from external JSON data', () => {
   assert.deepEqual(ITEM_CATALOG, itemCatalog);
+});
+
+test('resolves item catalog ids and localized aliases without scanning behavior regressions', () => {
+  assert.equal(getItemNameById('(O)388'), '木材');
+  assert.equal(getItemIdByName('木材'), '388');
 });
 
 test('loads equipment Chinese labels from external JSON data', () => {
@@ -117,4 +123,16 @@ test('fish catalog entries include complete base fields', () => {
   });
 
   assert.deepEqual(invalidFish, []);
+});
+
+test('reports static data coverage counts for release review', () => {
+  const report = createStaticDataCoverageReport();
+
+  assert.equal(report.itemCatalogCount > 0, true);
+  assert.equal(report.itemIconCount > 0, true);
+  assert.equal(report.npcGiftPreferenceCount > 0, true);
+  assert.equal(report.fishRuleCount > 0, true);
+  assert.equal(report.processingRuleCount > 0, true);
+  assert.equal(report.upgradeRuleCount > 0, true);
+  assert.equal(report.recommendationLocalizationCount > 0, true);
 });

@@ -1,5 +1,5 @@
 import { type UIEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUp, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowUp, ChevronDown, ChevronRight, RefreshCw, Trash2 } from 'lucide-react';
 import { useStore } from 'zustand';
 import type { PlannerGoal, RecommendationItem, StardewSaveSnapshot, Weather } from '../shared/types.ts';
 import { getBackToTopButtonA11yProps, shouldShowBackToTop } from './backToTop.ts';
@@ -14,6 +14,7 @@ import {
   formatConfidence,
   formatEquipmentList,
   formatEquipmentValue,
+  formatFriendshipPoints,
   formatLuck,
   formatNpcName,
   formatPriority,
@@ -30,6 +31,7 @@ import { formatGoalLabel, formatPlanTitle, formatWeatherLabel, t } from './i18n.
 import { groupInventoryBySource } from './inventoryGroups.ts';
 import { getItemIconPath } from './itemIcons.ts';
 import { formatJojaProjectName } from './jojaProjectDisplay.ts';
+import { formatParseWarningMessage } from './parseWarnings.ts';
 import { createJojaProgress } from './jojaProgress.ts';
 import { formatItemName, formatItemSource } from './itemDisplay.ts';
 import { groupProducedItemsBySource, shouldShowProducedItemDetailButton } from './producedItemActionDetails.ts';
@@ -42,6 +44,7 @@ import {
 import { resolveRecommendationTabForSaveClick, resolveRecommendationTabForSaveSelection } from './recommendationTabState.ts';
 import { createRecommendationTabs, type RecommendationTabId } from './recommendationTabs.ts';
 import { mergeImportedSaveForScannedEntry } from './saveImportMerge.ts';
+import { formatSaveFarmName, formatSavePlayerName } from './saveListDisplay.ts';
 import { createSidebarGameGroups } from './sidebarGameGroups.ts';
 import { importBrowserSaveFile } from './services/saveFileImportService.ts';
 import { isTauriRuntime } from './services/tauriEnvironment.ts';
@@ -66,7 +69,7 @@ export function App() {
     return initialAppData.snapshotsBySaveId;
   });
   const [isDesktopRuntime] = useState(() => isTauriRuntime());
-  const [importMessage, setImportMessage] = useState('可手动选择 Stardew Valley 存档 XML 文件。');
+  const [importMessage, setImportMessage] = useState(() => t(settingsStore.getState().config.language, 'saves.status.initial'));
   const [activeRecommendationTab, setActiveRecommendationTab] = useState<RecommendationTabId>('reminders');
   const [expandedGameIds, setExpandedGameIds] = useState<Record<string, boolean>>({ 'stardew-valley': true });
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -77,6 +80,7 @@ export function App() {
   const selectSave = useStore(saveStore, (state) => state.selectSave);
   const upsertSave = useStore(saveStore, (state) => state.upsertSave);
   const removeSaveByPath = useStore(saveStore, (state) => state.removeSaveByPath);
+  const removeSaveById = useStore(saveStore, (state) => state.removeSaveById);
   const snapshot = useStore(plannerStore, (state) => state.snapshot);
   const planDate = useStore(plannerStore, (state) => state.planDate);
   const selectedWeather = useStore(plannerStore, (state) => state.selectedWeather);
@@ -107,10 +111,10 @@ export function App() {
 
   useEffect(() => {
     const selected = selectedSaveId ? snapshotsBySaveId[selectedSaveId] : undefined;
-    if (selected && selected.saveIdentity.uniqueId !== snapshot.saveIdentity.uniqueId) {
+    if (selected && selected !== snapshot) {
       setSnapshot(selected);
     }
-  }, [selectedSaveId, setSnapshot, snapshot.saveIdentity.uniqueId, snapshotsBySaveId]);
+  }, [selectedSaveId, setSnapshot, snapshot, snapshotsBySaveId]);
 
   useEffect(() => {
     if (!isDesktopRuntime) {
@@ -119,7 +123,7 @@ export function App() {
 
     let cancelled = false;
     saveStore.getState().setScanning(true);
-    setImportMessage('正在扫描默认星露谷存档目录...');
+    setImportMessage(t(language, 'saves.status.scanningDefault'));
     void scanTauriSaves()
       .then((scannedSaves) => {
         if (cancelled) {
@@ -128,18 +132,19 @@ export function App() {
 
         if (scannedSaves.length > 0) {
           saveStore.getState().setSaves(scannedSaves);
-          setImportMessage(`已扫描到 ${scannedSaves.length} 个存档。`);
+          setImportMessage(t(language, 'saves.status.scanned', { count: scannedSaves.length }));
         } else {
           saveStore.getState().setSaves([]);
           setSnapshotsBySaveId({});
-          setImportMessage('默认目录未找到存档，可手动选择存档文件夹导入。');
+          setImportMessage(t(language, 'saves.status.defaultNotFound'));
         }
       })
       .catch((error) => {
         if (!cancelled) {
           saveStore.getState().setSaves([]);
           setSnapshotsBySaveId({});
-          setImportMessage(error instanceof Error ? error.message : '扫描默认存档目录失败，可手动选择存档文件夹导入。');
+          console.error('Failed to scan default saves', error);
+          setImportMessage(t(language, 'saves.status.scanDefaultFailed'));
         }
       })
       .finally(() => {
@@ -151,7 +156,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [isDesktopRuntime]);
+  }, [isDesktopRuntime, language]);
 
   useEffect(() => {
     if (!isDesktopRuntime || config.manualSaveDirectories.length === 0) {
@@ -195,12 +200,12 @@ export function App() {
 
     const selectedSave = saves.find((save) => save.id === selectedSaveId);
     if (!isDesktopRuntime || !selectedSave) {
-      setImportMessage('该存档已识别但尚未解析，请手动选择对应主存档文件生成计划。');
+      setImportMessage(t(language, 'saves.status.selectedUnparsed'));
       return;
     }
 
     let cancelled = false;
-    setImportMessage(`正在读取 ${selectedSave.name} 的主存档文件...`);
+    setImportMessage(t(language, 'saves.status.reading', { name: selectedSave.name }));
     void readTauriSaveFile({ savePath: selectedSave.path })
       .then((imported) => {
         if (!cancelled) {
@@ -209,14 +214,15 @@ export function App() {
       })
       .catch((error) => {
         if (!cancelled) {
-          setImportMessage(error instanceof Error ? error.message : '读取存档失败，请手动选择对应主存档文件。');
+          console.error('Failed to read selected save', error);
+          setImportMessage(t(language, 'saves.status.readFailed'));
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [isDesktopRuntime, saves, selectedSaveId, snapshotsBySaveId]);
+  }, [isDesktopRuntime, language, saves, selectedSaveId, snapshotsBySaveId]);
 
   function acceptImportedSave(
     imported: Awaited<ReturnType<typeof importBrowserSaveFile>>,
@@ -224,14 +230,62 @@ export function App() {
     options: { silent?: boolean } = {},
   ) {
       const merged = mergeImportedSaveForScannedEntry(imported, scannedEntry);
+      const entry = scannedEntry
+        ? { ...merged.entry, source: 'scanned' as const }
+        : {
+          ...merged.entry,
+          id: createManualSaveId(merged.entry.path),
+          source: 'manual' as const,
+        };
       setSnapshotsBySaveId((current) => ({
         ...current,
-        [merged.snapshotKey]: imported.snapshot,
+        [entry.id]: imported.snapshot,
       }));
-      upsertSave(merged.entry);
+      upsertSave(entry);
       if (!options.silent) {
-        setImportMessage(`已导入：${merged.entry.name}`);
+        setImportMessage(t(language, 'saves.status.imported', { name: entry.name }));
       }
+  }
+
+  async function handleRefreshSave(save: SaveEntry) {
+    if (!isDesktopRuntime || save.path.startsWith('manual://')) {
+      return;
+    }
+
+    try {
+      setImportMessage(t(language, 'saves.status.refreshing', { name: save.name }));
+      const imported = await readTauriSaveFile({ savePath: save.path });
+      const entry = {
+        ...save,
+        name: imported.entry.name,
+        lastModified: imported.entry.lastModified,
+        parseStatus: imported.entry.parseStatus,
+      };
+      setSnapshotsBySaveId((current) => ({
+        ...current,
+        [save.id]: imported.snapshot,
+      }));
+      upsertSave(entry);
+      setImportMessage(t(language, 'saves.status.refreshed', { name: entry.name }));
+    } catch (error) {
+      console.error('Failed to refresh save', error);
+      setImportMessage(t(language, 'saves.status.refreshFailed'));
+    }
+  }
+
+  function handleDeleteManualSave(save: SaveEntry) {
+    if (save.source !== 'manual') {
+      return;
+    }
+
+    removeSaveById(save.id);
+    removeManualSaveDirectory(getSaveDirectoryPath(save.path));
+    setSnapshotsBySaveId((current) => {
+      const next = { ...current };
+      delete next[save.id];
+      return next;
+    });
+    setImportMessage(t(language, 'saves.status.manualRemoved', { name: save.name }));
   }
 
   async function handleImportFile(file: File | undefined) {
@@ -242,7 +296,8 @@ export function App() {
     try {
       acceptImportedSave(await importBrowserSaveFile(file));
     } catch (error) {
-      setImportMessage(error instanceof Error ? error.message : '导入失败，请确认选择的是存档 XML 文件。');
+      console.error('Failed to import browser save file', error);
+      setImportMessage(t(language, 'saves.status.importFailed'));
     }
   }
 
@@ -255,7 +310,8 @@ export function App() {
         addManualSaveDirectory(picked.saveDirectoryPath);
       }
     } catch (error) {
-      setImportMessage(error instanceof Error ? error.message : '打开桌面文件选择器失败。');
+      console.error('Failed to pick desktop save file', error);
+      setImportMessage(t(language, 'saves.status.pickerFailed'));
     }
   }
 
@@ -289,7 +345,7 @@ export function App() {
         <div>
           <h1>{t(language, 'app.title')}</h1>
         </div>
-        <section className="sidebar-section game-list" id="saves" aria-label="存档列表">
+        <section className="sidebar-section game-list" id="saves" aria-label={t(language, 'saves.aria.list')}>
           {sidebarGameGroups.map((game) => {
             const isExpanded = expandedGameIds[game.id] ?? false;
 
@@ -332,16 +388,43 @@ export function App() {
                     )}
                     <div className="save-list">
                       {game.saves.map((save) => (
-                        <button
-                          className="save-button"
-                          data-selected={save.id === selectedSaveId}
-                          key={save.id}
-                          type="button"
-                          onClick={() => handleSelectSave(save.id)}
-                        >
-                          <span>{save.name}</span>
-                          <small>{formatDateTime(save.lastModified)}</small>
-                        </button>
+                        <div className="save-row" data-selected={save.id === selectedSaveId} key={save.id}>
+                          <button
+                            className="save-button"
+                            type="button"
+                            onClick={() => handleSelectSave(save.id)}
+                          >
+                            <span>{formatSaveFarmName(save, snapshotsBySaveId[save.id], language)}</span>
+                            <small>{formatSavePlayerName(save, snapshotsBySaveId[save.id], language)}</small>
+                            <small>{formatDateTime(save.lastModified, language)}</small>
+                          </button>
+                          <div className="save-row-actions">
+                            {save.source === 'manual' ? (
+                              <span className="save-source-badge">{t(language, 'saves.manualBadge')}</span>
+                            ) : null}
+                            <button
+                              aria-label={t(language, 'saves.refresh')}
+                              className="icon-button"
+                              disabled={!isDesktopRuntime || save.path.startsWith('manual://')}
+                              title={t(language, 'saves.refresh')}
+                              type="button"
+                              onClick={() => void handleRefreshSave(save)}
+                            >
+                              <RefreshCw aria-hidden="true" size={15} />
+                            </button>
+                            {save.source === 'manual' ? (
+                              <button
+                                aria-label={t(language, 'saves.deleteManual')}
+                                className="icon-button"
+                                title={t(language, 'saves.deleteManual')}
+                                type="button"
+                                onClick={() => handleDeleteManualSave(save)}
+                              >
+                                <Trash2 aria-hidden="true" size={15} />
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -401,12 +484,12 @@ export function App() {
         {plan.parseWarnings.length > 0 ? (
           <section className="warning-list" aria-label={t(language, 'notice.parseWarnings')}>
             {plan.parseWarnings.map((warning) => (
-              <p key={`${warning.code}-${warning.message}`}>{warning.message}</p>
+              <p key={`${warning.code}-${warning.message}`}>{formatParseWarningMessage(warning, language)}</p>
             ))}
           </section>
         ) : null}
 
-        <section className="summary-grid" aria-label="当前状态">
+        <section className="summary-grid" aria-label={t(language, 'summary.aria.currentStatus')}>
           {createSummaryCards(snapshot, planDate, language).map((card) => (
             <div key={card.id}>
               <span>{card.label}</span>
@@ -515,7 +598,7 @@ function RecommendationTabs({
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0];
 
   return (
-    <section className="recommendation-panel" aria-label="建议">
+    <section className="recommendation-panel" aria-label={t(language, 'recommendation.aria.panel')}>
       <div className="recommendation-tabs" role="tablist" aria-label={t(language, 'tabs.aria')}>
         {tabs.map((tab) => (
           <button
@@ -566,6 +649,18 @@ function getTabCount(tabId: RecommendationTabId, snapshot: StardewSaveSnapshot, 
   }
 
   return items.length;
+}
+
+function createManualSaveId(path: string): string {
+  return `manual:${path}`;
+}
+
+function getSaveDirectoryPath(path: string): string {
+  const normalized = path.replace(/\/+$/, '');
+  const parts = normalized.split('/');
+  const leaf = parts.at(-1);
+  const parent = parts.slice(0, -1).join('/');
+  return leaf && parent.endsWith(`/${leaf}`) ? parent : normalized;
 }
 
 function SkillPanel({ language, snapshot }: { language: AppLanguage; snapshot: StardewSaveSnapshot }) {
@@ -673,7 +768,7 @@ function FriendshipPanel({ language, snapshot }: { language: AppLanguage; snapsh
               <dl className="metric-list">
                 <div>
                   <dt>{t(language, 'friendship.points')}</dt>
-                  <dd>{relationship.points} / {relationship.hearts}</dd>
+                  <dd>{formatFriendshipPoints(relationship)}</dd>
                 </div>
                 <div>
                   <dt>{t(language, 'friendship.weeklyGifts')}</dt>
@@ -989,7 +1084,9 @@ function RecommendationList({
   language: AppLanguage;
 }) {
   const [detailItem, setDetailItem] = useState<RecommendationItem | undefined>();
-  const localizedItems = items.map((item) => localizeRecommendationItem(item, language));
+  const localizedItems = useMemo(() => {
+    return items.map((item) => localizeRecommendationItem(item, language));
+  }, [items, language]);
 
   return (
     <div className="recommendation-list">

@@ -18,11 +18,13 @@ jobs:
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
+      - run: npm run typecheck
       - run: npm test
+      - run: cargo test --manifest-path src-tauri/Cargo.toml
       - run: npm run tauri:build -- --bundles dmg
       - uses: actions/upload-artifact@v4
         with:
-          name: game-assistant-macos-dmg
+          name: GameAssistant-${{ github.ref_name }}-macos-aarch64-dmg
           path: src-tauri/target/release/bundle/dmg/*.dmg
 
   build-windows:
@@ -36,9 +38,11 @@ jobs:
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
+      - run: npm run typecheck
       - run: npm test
+      - run: cargo test --manifest-path src-tauri/Cargo.toml
       - run: npm run tauri:build -- --bundles nsis
       - uses: actions/upload-artifact@v4
         with:
-          name: game-assistant-windows-installer
+          name: GameAssistant-${{ github.ref_name }}-windows-x64-setup
           path: src-tauri/target/release/bundle/nsis/*.exe

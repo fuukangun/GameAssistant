@@ -5,6 +5,7 @@ import { RECOMMENDATION_LOCALIZATION } from '../stardew/data/recommendationLocal
 import { NPC_GIFT_PREFERENCES, UNIVERSAL_GIFT_PREFERENCES } from '../stardew/data/npcs.ts';
 import { getItemNameById } from '../stardew/data/items.ts';
 import { demoSnapshot } from '../stardew/fixtures/demoSnapshot.ts';
+import { REPRESENTATIVE_FIXTURES } from '../stardew/fixtures/representativeFixtures.ts';
 import { generatePlan } from '../stardew/planner/generatePlan.ts';
 import {
   localizeCommunityCenterBundleName,
@@ -358,6 +359,82 @@ test('localizes English item names through the item catalog when Chinese recomme
   assert.match(text, /铁锭 x3/);
   assert.match(text, /矿工点心 x1/);
   assert.doesNotMatch(text, /\b(Copper Bar|Iron Bar|Miner's Treat)\b/);
+});
+
+test('localizes parsed crafting and blacksmith statuses in English recommendations', () => {
+  const plan = generatePlan({
+    goal: 'money',
+    manualCorrections: { giftedToday: false, harvestedToday: false, wateredToday: false },
+    planDate: { year: 2, season: 'summer', day: 15, sourceSaveDate: { year: 2, season: 'summer', day: 15 } },
+    selectedWeather: 'sunny',
+    snapshot: {
+      ...demoSnapshot,
+      crops: [],
+      crafting: {
+        parsed: true,
+        unlockedRecipeIds: ['keg'],
+      },
+      blacksmith: {
+        parsed: true,
+      },
+      wallet: { money: 4500 },
+      player: {
+        ...demoSnapshot.player,
+        maxItems: 36,
+        equipment: {
+          ...demoSnapshot.player.equipment,
+          pickaxeName: 'Pickaxe',
+        },
+      },
+      inventory: [
+        { id: 258, name: 'Blueberry', stack: 20, source: 'chest', sourceLabel: '储物箱' },
+        { id: 334, name: 'Copper Bar', stack: 5, source: 'chest', sourceLabel: '储物箱' },
+      ],
+    },
+  });
+
+  const localizedText = plan.actions
+    .map((item) => localizeRecommendationItem(item, 'en-US'))
+    .map((item) => JSON.stringify({
+      title: item.title,
+      reason: item.reason,
+      evidence: item.evidence,
+      uncertainty: item.uncertainty,
+    }))
+    .join('\n');
+
+  assert.match(localizedText, /Recipe unlocked/);
+  assert.match(localizedText, /missing materials/);
+  assert.match(localizedText, /No tool currently being upgraded/);
+  assert.doesNotMatch(localizedText, /[\u4e00-\u9fff]/);
+});
+
+test('representative fixtures do not leak Chinese in English recommendation output', () => {
+  const leaked = REPRESENTATIVE_FIXTURES.flatMap((fixture) => {
+    const plan = generatePlan({
+      goal: 'free',
+      manualCorrections: { giftedToday: false, harvestedToday: false, wateredToday: false },
+      planDate: { ...fixture.snapshot.time, sourceSaveDate: fixture.snapshot.time },
+      selectedWeather: fixture.snapshot.weatherForTomorrow ?? 'sunny',
+      snapshot: fixture.snapshot,
+    });
+
+    const text = [...plan.reminders, ...plan.actions]
+      .map((item) => localizeRecommendationItem(item, 'en-US'))
+      .map((item) => JSON.stringify({
+        id: item.id,
+        title: item.title,
+        reason: item.reason,
+        evidence: item.evidence,
+        uncertainty: item.uncertainty,
+        estimate: item.estimate?.description,
+      }))
+      .join('\n');
+
+    return /[\u4e00-\u9fff]/.test(text) ? [fixture.id] : [];
+  });
+
+  assert.deepEqual(leaked, []);
 });
 
 test('localizes new collection and animal feed recommendation text to English', () => {

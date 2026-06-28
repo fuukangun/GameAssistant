@@ -7,14 +7,23 @@ export interface ItemCatalogEntry {
 }
 
 export const ITEM_CATALOG: ItemCatalogEntry[] = itemCatalog;
+const ITEM_NAMES_BY_ID = new Map(ITEM_CATALOG.map((item) => [normalizeItemId(item.id), item.name]));
+const ITEM_IDS_BY_NAME = new Map<string, string>();
+
+for (const item of ITEM_CATALOG) {
+  ITEM_IDS_BY_NAME.set(item.name, normalizeItemId(item.id));
+  const alias = ITEM_NAME_ALIASES[item.name];
+  if (alias !== undefined) {
+    ITEM_IDS_BY_NAME.set(alias, normalizeItemId(item.id));
+  }
+}
 
 export function getItemNameById(id: number | string | undefined): string | undefined {
   if (id === undefined) {
     return undefined;
   }
 
-  const normalizedId = normalizeItemId(id);
-  const name = ITEM_CATALOG.find((item) => String(item.id) === normalizedId)?.name;
+  const name = ITEM_NAMES_BY_ID.get(normalizeItemId(id));
   return name ? (ITEM_NAME_ALIASES[name] ?? name) : undefined;
 }
 
@@ -32,8 +41,7 @@ export function getItemIdByName(name: string | undefined): string | undefined {
   }
 
   const trimmed = name.trim();
-  const catalogMatch = ITEM_CATALOG.find((item) => item.name === trimmed || ITEM_NAME_ALIASES[item.name] === trimmed);
-  return catalogMatch ? normalizeItemId(catalogMatch.id) : undefined;
+  return ITEM_IDS_BY_NAME.get(trimmed);
 }
 
 export function normalizeItemId(id: number | string): string {

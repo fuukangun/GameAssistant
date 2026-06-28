@@ -4,7 +4,11 @@ import type {
   EquipmentSummary,
   FarmPlotSummary,
   AnimalFeedSummary,
+  BlacksmithSummary,
+  CraftingSummary,
   InventoryItem,
+  MachineStateSummary,
+  MachineStateKind,
   ParseWarning,
   ProducedItemSummary,
   RelationshipSummary,
@@ -12,6 +16,7 @@ import type {
   Weather,
 } from '../../shared/types.ts';
 import { getItemNameById } from '../data/items.ts';
+import { PROCESSING_RULES } from '../data/processingRules.ts';
 import { SAVE_PARSING_RULES } from '../data/saveParsingRules.ts';
 
 const WEATHER_VALUES = new Set<Weather>(SAVE_PARSING_RULES.weatherValues);
@@ -122,8 +127,11 @@ export function parseStardewSaveXml(
     inventory: parseInventory(root, player),
     crops: parseCrops(root),
     readyMachineOutputs: parseReadyMachineOutputs(root),
+    machineStates: parseMachineStates(root),
     animalProducts: parseAnimalProducts(root),
     animalFeed: parseAnimalFeed(root),
+    crafting: parseCraftingSummary(player),
+    blacksmith: parseBlacksmithSummary(root, player),
     progression: {
       communityCenter: {
         completed: communityCenterCompleted,
@@ -698,6 +706,9 @@ function parseReadyMachineOutputs(root: XmlObject): ProducedItemSummary[] {
     if (isChestObject(object) || objectField(object, 'items')) {
       return [];
     }
+    if (boolField(object, 'readyForHarvest') === false) {
+      return [];
+    }
 
     const heldObjectContainer = objectField(object, 'heldObject');
     const heldObject = objectField(heldObjectContainer ?? {}, 'Object')
@@ -730,6 +741,120 @@ function parseReadyMachineOutputs(root: XmlObject): ProducedItemSummary[] {
   });
 }
 
+const TARGET_MACHINE_NAMES = new Set([
+  ...PROCESSING_RULES.flatMap((rule) => rule.machineNames),
+  'Keg',
+  '小桶',
+  'Preserves Jar',
+  '罐头瓶',
+  'Furnace',
+  '熔炉',
+  'Fish Smoker',
+  '鱼熏制机',
+  'Mayonnaise Machine',
+  '蛋黄酱机',
+  'Cheese Press',
+  '奶酪压制机',
+  'Dehydrator',
+  '脱水机',
+  'Tapper',
+  '树液采集器',
+  'Auto-Grabber',
+  '自动采集器',
+  'Mushroom Box',
+  '蘑菇箱',
+  'Lightning Rod',
+  '避雷针',
+]);
+
+function parseMachineStates(root: XmlObject): MachineStateSummary[] {
+  return collectObjectsByKey(root, 'GameLocation').flatMap((location) => {
+    const locationName = textField(location, 'name') ?? textField(location, 'Name');
+    const objects = objectField(location, 'objects');
+    return asArray(objects?.item).flatMap((item) => parseMachineStateItem(item, locationName));
+  });
+}
+
+function parseMachineStateItem(item: XmlObject, locationName?: string): MachineStateSummary[] {
+  const object = objectField(objectField(item, 'value') ?? {}, 'Object')
+    ?? objectField(item, 'Object')
+    ?? objectField(item, 'value')
+    ?? item;
+  if (!object || isChestObject(object) || objectField(object, 'items')) {
+    return [];
+  }
+
+  const machineName = textField(object, 'Name') ?? textField(object, 'name');
+  if (!machineName || !TARGET_MACHINE_NAMES.has(machineName)) {
+    return [];
+  }
+
+  const heldObject = getHeldObject(object);
+  const parsedHeldItem = heldObject ? parseInventoryItem(heldObject, 'chest', '')[0] : undefined;
+  const output = parsedHeldItem ? {
+    id: parsedHeldItem.id,
+    name: parsedHeldItem.name,
+    quantity: parsedHeldItem.stack,
+    source: 'machine' as const,
+    sourceName: machineName,
+  } : undefined;
+  const minutesUntilReady = numberField(object, 'minutesUntilReady');
+  const readyForHarvest = boolField(object, 'readyForHarvest');
+  const unknownFields = [
+    readyForHarvest === undefined && heldObject ? 'readyForHarvest' : undefined,
+    readyForHarvest === true && !output ? 'heldObject' : undefined,
+    minutesUntilReady === undefined ? 'minutesUntilReady' : undefined,
+  ].filter((field): field is string => Boolean(field));
+
+  return [{
+    machineId: textField(object, 'ItemId') ?? textField(object, 'itemId') ?? machineName,
+    machineName,
+    location: locationName,
+    tileKey: parseTileKey(item),
+    state: getMachineStateKind({ heldObject: Boolean(heldObject), readyForHarvest, minutesUntilReady, unknownFields }),
+    ...(readyForHarvest === true && output ? { output } : {}),
+    ...(parsedHeldItem ? { heldObjectId: parsedHeldItem.id } : {}),
+    minutesUntilReady,
+    parseConfidence: unknownFields.length === 0 ? 'high' : 'low',
+    unknownFields,
+  }];
+}
+
+function getHeldObject(object: XmlObject): XmlObject | undefined {
+  const heldObjectContainer = objectField(object, 'heldObject');
+  return objectField(heldObjectContainer ?? {}, 'Object')
+    ?? objectField(heldObjectContainer ?? {}, 'Item')
+    ?? heldObjectContainer;
+}
+
+function getMachineStateKind(input: {
+  heldObject: boolean;
+  readyForHarvest?: boolean;
+  minutesUntilReady?: number;
+  unknownFields: string[];
+}): MachineStateKind {
+  if (input.unknownFields.length > 0) {
+    return 'unknown';
+  }
+
+  if (input.readyForHarvest === true) {
+    return 'ready';
+  }
+
+  if (input.heldObject || (input.minutesUntilReady ?? 0) > 0) {
+    return 'processing';
+  }
+
+  return 'idle';
+}
+
+function parseTileKey(item: XmlObject): string | undefined {
+  const vector = objectField(objectField(item, 'key') ?? {}, 'Vector2');
+  const x = vector ? numberField(vector, 'X') : undefined;
+  const y = vector ? numberField(vector, 'Y') : undefined;
+  return x === undefined || y === undefined ? undefined : `${x},${y}`;
+}
+
 function parseAnimalProducts(root: XmlObject): ProducedItemSummary[] {
   return collectObjectsByKey(root, 'FarmAnimal').flatMap((animal) => {
     const produceId = textField(animal, 'currentProduce');
@@ -759,6 +884,66 @@ function parseAnimalFeed(root: XmlObject): AnimalFeedSummary {
   };
 }
 
+function parseCraftingSummary(player: XmlObject): CraftingSummary | undefined {
+  const craftingRecipes = objectField(player, 'craftingRecipes');
+  if (!craftingRecipes) {
+    return undefined;
+  }
+
+  const unlockedRecipeIds = asArray(craftingRecipes.item).flatMap((item) => {
+    const recipeName = textField(objectField(item, 'key') ?? {}, 'string');
+    return recipeName ? [normalizeRecipeId(recipeName)] : [];
+  });
+
+  return {
+    parsed: true,
+    unlockedRecipeIds,
+  };
+}
+
+function parseBlacksmithSummary(root: XmlObject, player: XmlObject): BlacksmithSummary | undefined {
+  const candidates = [
+    player,
+    root,
+    ...collectObjectsByKey(root, 'GameLocation').filter((location) => {
+      const name = textField(location, 'name') ?? textField(location, 'Name');
+      return name === 'Blacksmith';
+    }),
+  ];
+
+  const source = candidates.find((candidate) => {
+    return candidate.daysUntilToolUpgrade !== undefined
+      || candidate.toolBeingUpgraded !== undefined;
+  });
+  if (!source) {
+    return undefined;
+  }
+
+  const toolContainer = objectField(source, 'toolBeingUpgraded');
+  const tool = toolContainer
+    ? objectField(toolContainer, 'Item')
+      ?? objectField(toolContainer, 'Object')
+      ?? toolContainer
+    : undefined;
+  const toolInProgress = tool ? getEquipmentDisplayName(tool) ?? parseItemName(tool, parseItemId(tool)) : undefined;
+  const daysUntilReady = numberField(source, 'daysUntilToolUpgrade');
+
+  return {
+    parsed: true,
+    ...(toolInProgress ? { toolInProgress } : {}),
+    ...(daysUntilReady && daysUntilReady > 0 ? { daysUntilReady } : {}),
+  };
+}
+
+function normalizeRecipeId(recipeName: string): string {
+  return recipeName
+    .trim()
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/[^A-Za-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+}
+
 function parseFarmPlotSummary(root: XmlObject): FarmPlotSummary | undefined {
   const farmLocation = findFarmLocation(root);
   if (!farmLocation) {
@@ -780,6 +965,7 @@ function parseFarmPlotSummary(root: XmlObject): FarmPlotSummary | undefined {
     ? asArray(terrainFeatures.item).filter(isEmptyHoeDirtTerrainFeatureItem).length
     : undefined;
   const occupiedObjectCount = objects ? asArray(objects.item).length : 0;
+  const sprinklerCount = objects ? asArray(objects.item).filter(isSprinklerObjectItem).length : 0;
   const buildingCount = buildings ? countCollectionEntries(buildings, ['Building', 'item']) : 0;
   const resourceClumpCount = resourceClumps ? countCollectionEntries(resourceClumps, ['ResourceClump', 'item']) : 0;
   const parsedFields = [
@@ -800,10 +986,15 @@ function parseFarmPlotSummary(root: XmlObject): FarmPlotSummary | undefined {
     resourceClumpCount,
     buildingCount,
     emptyTileCount: emptyTilledTileCount,
+    ...(sprinklerCount > 0 ? {
+      sprinklerCount,
+      sprinklerCoverageParsed: false,
+    } : {}),
     parsedFields,
     unknownFields: [
       'farmableTileCount',
       terrainFeatures ? undefined : 'emptyTileCount',
+      sprinklerCount > 0 ? 'sprinklerCoverage' : undefined,
       'buildingFootprints',
     ].filter((field): field is string => Boolean(field)),
   };
@@ -829,6 +1020,14 @@ function hasCropInTerrainFeatureItem(item: XmlObject): boolean {
 
 function isEmptyHoeDirtTerrainFeatureItem(item: XmlObject): boolean {
   return isHoeDirtTerrainFeatureItem(item) && !hasCropInTerrainFeatureItem(item);
+}
+
+function isSprinklerObjectItem(item: XmlObject): boolean {
+  const object = objectField(objectField(item, 'value') ?? {}, 'Object') ?? objectField(item, 'Object') ?? item;
+  const id = textField(object, 'ItemId') ?? textField(object, 'itemId');
+  const name = textField(object, 'Name') ?? textField(object, 'name');
+  return ['599', '621', '645'].includes(id ?? '')
+    || ['Sprinkler', 'Quality Sprinkler', 'Iridium Sprinkler', '洒水器', '优质洒水器', '铱制洒水器'].includes(name ?? '');
 }
 
 function countCollectionEntries(collection: XmlObject, entryFields: string[]): number {

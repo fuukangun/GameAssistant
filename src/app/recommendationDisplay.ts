@@ -568,7 +568,9 @@ function localizeEvidenceValue(value: string, label?: string): string {
 
   let localized = localizeEnglishItemStackList(value);
 
-  for (const [zh, en] of Object.entries(RECOMMENDATION_LOCALIZATION.statusTexts)) {
+  const statusTextTranslations = Object.entries(RECOMMENDATION_LOCALIZATION.statusTexts)
+    .sort(([left], [right]) => right.length - left.length);
+  for (const [zh, en] of statusTextTranslations) {
     localized = localized.replaceAll(zh, en);
   }
 

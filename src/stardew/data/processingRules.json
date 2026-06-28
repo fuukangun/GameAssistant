@@ -1,11 +1,21 @@
 [
   {
     "id": "fish-smoker",
-    "machineIds": ["FishSmoker"],
-    "machineNames": ["鱼熏制机", "Fish Smoker"],
+    "machineIds": [
+      "FishSmoker"
+    ],
+    "machineNames": [
+      "鱼熏制机",
+      "Fish Smoker"
+    ],
     "ingredientKind": "fish",
-    "extraMaterialIds": [382],
-    "extraMaterialNames": ["煤炭", "Coal"],
+    "extraMaterialIds": [
+      382
+    ],
+    "extraMaterialNames": [
+      "煤炭",
+      "Coal"
+    ],
     "title": "用鱼熏制机制作熏鱼",
     "reason": "库存中已有鱼熏制机、鱼和煤炭，可以把鱼加工成熏鱼，提高即时出售价值。",
     "completeMachineTitle": "补齐鱼熏制机",
@@ -13,12 +23,43 @@
     "priorityForMoneyGoal": "recommended",
     "priorityDefault": "optional",
     "confidence": "high",
-    "uncertainty": "加工排队和机器当前占用状态尚未解析，请按农场实际机器空闲情况调整。"
+    "uncertainty": "加工排队和机器当前占用状态尚未解析，请按农场实际机器空闲情况调整。",
+    "craftRecipeName": "Fish Smoker",
+    "craftMaterials": [
+      {
+        "itemId": 388,
+        "itemName": "木材",
+        "quantity": 10
+      },
+      {
+        "itemId": 336,
+        "itemName": "金锭",
+        "quantity": 3
+      },
+      {
+        "itemId": 382,
+        "itemName": "煤炭",
+        "quantity": 10
+      },
+      {
+        "itemId": 774,
+        "itemName": "海凝胶",
+        "quantity": 1
+      }
+    ],
+    "purchasable": false,
+    "processingMinutes": 50,
+    "valueEstimateGold": 120
   },
   {
     "id": "keg",
-    "machineIds": ["Keg"],
-    "machineNames": ["小桶", "Keg"],
+    "machineIds": [
+      "Keg"
+    ],
+    "machineNames": [
+      "小桶",
+      "Keg"
+    ],
     "ingredientKind": "keg",
     "title": "用小桶酿造高价值产物",
     "reason": "库存中已有小桶和可酿造原料，适合把水果、啤酒花或小麦等转成更高价值产物。",
@@ -27,12 +68,43 @@
     "priorityForMoneyGoal": "recommended",
     "priorityDefault": "optional",
     "confidence": "medium",
-    "uncertainty": "加工耗时、机器当前占用状态和精确增值倍率尚未逐项解析。"
+    "uncertainty": "加工耗时、机器当前占用状态和精确增值倍率尚未逐项解析。",
+    "craftRecipeName": "Keg",
+    "craftMaterials": [
+      {
+        "itemId": 388,
+        "itemName": "木材",
+        "quantity": 30
+      },
+      {
+        "itemId": 334,
+        "itemName": "铜锭",
+        "quantity": 1
+      },
+      {
+        "itemId": 335,
+        "itemName": "铁锭",
+        "quantity": 1
+      },
+      {
+        "itemId": 725,
+        "itemName": "橡树树脂",
+        "quantity": 1
+      }
+    ],
+    "purchasable": false,
+    "processingMinutes": 6000,
+    "valueEstimateGold": 150
   },
   {
     "id": "preserves-jar",
-    "machineIds": ["PreservesJar"],
-    "machineNames": ["罐头瓶", "Preserves Jar"],
+    "machineIds": [
+      "PreservesJar"
+    ],
+    "machineNames": [
+      "罐头瓶",
+      "Preserves Jar"
+    ],
     "ingredientKind": "preserves",
     "title": "用罐头瓶加工农产品",
     "reason": "库存中已有罐头瓶和可加工原料，可以把水果、蔬菜或鱼籽转成更高价值产物。",
@@ -41,12 +113,38 @@
     "priorityForMoneyGoal": "optional",
     "priorityDefault": "optional",
     "confidence": "medium",
-    "uncertainty": "加工耗时、机器当前占用状态和精确增值倍率尚未逐项解析。"
+    "uncertainty": "加工耗时、机器当前占用状态和精确增值倍率尚未逐项解析。",
+    "craftRecipeName": "Preserves Jar",
+    "craftMaterials": [
+      {
+        "itemId": 388,
+        "itemName": "木材",
+        "quantity": 50
+      },
+      {
+        "itemId": 390,
+        "itemName": "石头",
+        "quantity": 40
+      },
+      {
+        "itemId": 382,
+        "itemName": "煤炭",
+        "quantity": 8
+      }
+    ],
+    "purchasable": false,
+    "processingMinutes": 4000,
+    "valueEstimateGold": 110
   },
   {
     "id": "mayonnaise-machine",
-    "machineIds": ["MayonnaiseMachine"],
-    "machineNames": ["蛋黄酱机", "Mayonnaise Machine"],
+    "machineIds": [
+      "MayonnaiseMachine"
+    ],
+    "machineNames": [
+      "蛋黄酱机",
+      "Mayonnaise Machine"
+    ],
     "ingredientKind": "egg",
     "title": "用蛋黄酱机加工鸡蛋",
     "reason": "库存中已有蛋黄酱机和鸡蛋类原料，可以加工成蛋黄酱类产物，提高畜牧产物价值。",
@@ -55,12 +153,43 @@
     "priorityForMoneyGoal": "recommended",
     "priorityDefault": "optional",
     "confidence": "high",
-    "uncertainty": "机器当前占用状态尚未解析，请按农场实际机器空闲情况调整。"
+    "uncertainty": "机器当前占用状态尚未解析，请按农场实际机器空闲情况调整。",
+    "craftRecipeName": "Mayonnaise Machine",
+    "craftMaterials": [
+      {
+        "itemId": 388,
+        "itemName": "木材",
+        "quantity": 15
+      },
+      {
+        "itemId": 390,
+        "itemName": "石头",
+        "quantity": 15
+      },
+      {
+        "itemId": 334,
+        "itemName": "铜锭",
+        "quantity": 1
+      },
+      {
+        "itemId": 787,
+        "itemName": "地晶",
+        "quantity": 1
+      }
+    ],
+    "purchasable": false,
+    "processingMinutes": 180,
+    "valueEstimateGold": 190
   },
   {
     "id": "cheese-press",
-    "machineIds": ["CheesePress"],
-    "machineNames": ["奶酪压制机", "Cheese Press"],
+    "machineIds": [
+      "CheesePress"
+    ],
+    "machineNames": [
+      "奶酪压制机",
+      "Cheese Press"
+    ],
     "ingredientKind": "milk",
     "title": "用奶酪压制机加工牛奶",
     "reason": "库存中已有奶酪压制机和牛奶类原料，可以加工成奶酪，提高畜牧产物价值。",
@@ -69,14 +198,50 @@
     "priorityForMoneyGoal": "recommended",
     "priorityDefault": "optional",
     "confidence": "high",
-    "uncertainty": "机器当前占用状态尚未解析，请按农场实际机器空闲情况调整。"
+    "uncertainty": "机器当前占用状态尚未解析，请按农场实际机器空闲情况调整。",
+    "craftRecipeName": "Cheese Press",
+    "craftMaterials": [
+      {
+        "itemId": 388,
+        "itemName": "木材",
+        "quantity": 45
+      },
+      {
+        "itemId": 390,
+        "itemName": "石头",
+        "quantity": 45
+      },
+      {
+        "itemId": 709,
+        "itemName": "硬木",
+        "quantity": 10
+      },
+      {
+        "itemId": 334,
+        "itemName": "铜锭",
+        "quantity": 1
+      }
+    ],
+    "purchasable": false,
+    "processingMinutes": 200,
+    "valueEstimateGold": 230
   },
   {
     "id": "loom",
-    "machineIds": ["Loom"],
-    "machineNames": ["织布机", "Loom"],
-    "ingredientIds": [440],
-    "ingredientNames": ["羊毛", "Wool"],
+    "machineIds": [
+      "Loom"
+    ],
+    "machineNames": [
+      "织布机",
+      "Loom"
+    ],
+    "ingredientIds": [
+      440
+    ],
+    "ingredientNames": [
+      "羊毛",
+      "Wool"
+    ],
     "title": "用织布机加工羊毛",
     "reason": "库存中已有织布机和羊毛，可以加工成布料，用于出售、制作或任务需求。",
     "completeMachineTitle": "补齐织布机",
@@ -84,14 +249,54 @@
     "priorityForMoneyGoal": "optional",
     "priorityDefault": "optional",
     "confidence": "medium",
-    "uncertainty": "机器当前占用状态尚未解析，请按农场实际机器空闲情况调整。"
+    "uncertainty": "机器当前占用状态尚未解析，请按农场实际机器空闲情况调整。",
+    "craftRecipeName": "Loom",
+    "craftMaterials": [
+      {
+        "itemId": 388,
+        "itemName": "木材",
+        "quantity": 60
+      },
+      {
+        "itemId": 771,
+        "itemName": "纤维",
+        "quantity": 30
+      },
+      {
+        "itemId": 772,
+        "itemName": "松焦油",
+        "quantity": 1
+      }
+    ],
+    "purchasable": false,
+    "processingMinutes": 240,
+    "valueEstimateGold": 470
   },
   {
     "id": "oil-maker",
-    "machineIds": ["OilMaker"],
-    "machineNames": ["产油机", "Oil Maker"],
-    "ingredientIds": [430, 421, 431, 270],
-    "ingredientNames": ["松露", "Truffle", "向日葵", "Sunflower", "向日葵种子", "Sunflower Seeds", "玉米", "Corn"],
+    "machineIds": [
+      "OilMaker"
+    ],
+    "machineNames": [
+      "产油机",
+      "Oil Maker"
+    ],
+    "ingredientIds": [
+      430,
+      421,
+      431,
+      270
+    ],
+    "ingredientNames": [
+      "松露",
+      "Truffle",
+      "向日葵",
+      "Sunflower",
+      "向日葵种子",
+      "Sunflower Seeds",
+      "玉米",
+      "Corn"
+    ],
     "title": "用产油机加工油类产物",
     "reason": "库存中已有产油机和可加工原料，可以加工松露油或食用油类产物。",
     "completeMachineTitle": "补齐产油机",
@@ -99,12 +304,38 @@
     "priorityForMoneyGoal": "recommended",
     "priorityDefault": "optional",
     "confidence": "medium",
-    "uncertainty": "机器当前占用状态和尚未逐项计算原料收益，请按实际需求选择原料。"
+    "uncertainty": "机器当前占用状态和尚未逐项计算原料收益，请按实际需求选择原料。",
+    "craftRecipeName": "Oil Maker",
+    "craftMaterials": [
+      {
+        "itemId": 706,
+        "itemName": "史莱姆泥",
+        "quantity": 50
+      },
+      {
+        "itemId": 709,
+        "itemName": "硬木",
+        "quantity": 20
+      },
+      {
+        "itemId": 336,
+        "itemName": "金锭",
+        "quantity": 1
+      }
+    ],
+    "purchasable": false,
+    "processingMinutes": 360,
+    "valueEstimateGold": 100
   },
   {
     "id": "dehydrator",
-    "machineIds": ["Dehydrator"],
-    "machineNames": ["脱水机", "Dehydrator"],
+    "machineIds": [
+      "Dehydrator"
+    ],
+    "machineNames": [
+      "脱水机",
+      "Dehydrator"
+    ],
     "ingredientKind": "dehydrator",
     "title": "用脱水机加工水果或蘑菇",
     "reason": "库存中已有脱水机和可加工原料，可以把水果或蘑菇加工成更高价值产物。",
@@ -113,6 +344,27 @@
     "priorityForMoneyGoal": "recommended",
     "priorityDefault": "optional",
     "confidence": "medium",
-    "uncertainty": "脱水机需要同类原料达到足够数量，当前仅按单种库存数量做保守匹配。"
+    "uncertainty": "脱水机需要同类原料达到足够数量，当前仅按单种库存数量做保守匹配。",
+    "craftRecipeName": "Dehydrator",
+    "craftMaterials": [
+      {
+        "itemId": 388,
+        "itemName": "木材",
+        "quantity": 30
+      },
+      {
+        "itemId": 330,
+        "itemName": "黏土",
+        "quantity": 2
+      },
+      {
+        "itemId": 774,
+        "itemName": "火凝胶",
+        "quantity": 1
+      }
+    ],
+    "purchasable": true,
+    "processingMinutes": 1750,
+    "valueEstimateGold": 175
   }
 ]

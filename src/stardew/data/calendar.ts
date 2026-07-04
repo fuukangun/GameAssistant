@@ -11,9 +11,25 @@ export interface Birthday {
 export interface Festival {
   id: string;
   name: string;
+  nameEn: string;
   season: Season;
   day: number;
+  endDay?: number;
   timeHint: string;
+  timeHintEn: string;
+  planningTips: string[];
+  planningTipsEn: string[];
+  relatedData?: FestivalRelatedData;
+}
+
+export interface FestivalRelatedData {
+  shopItems?: Array<number | string>;
+  budgetSuggestion?: number;
+  requiredHeartNpc?: string;
+  requiredHearts?: number;
+  itemCategories?: string[];
+  requiresFishingRod?: boolean;
+  specialGift?: 'winter_star';
 }
 
 export const BIRTHDAYS: Birthday[] = birthdays as Birthday[];

@@ -1,11 +1,11 @@
 import type { InventoryItem, MachineStateSummary, PlannerInput, PlanRecommendation, PlantingZone, PlantingZoneSummary, ProducedItemSummary, RecommendationItem, SaveTime, Season } from '../../shared/types.ts';
-import { BIRTHDAYS, FESTIVALS } from '../data/calendar.ts';
+import { buildBirthdayReminders } from './rules/birthdayReminders.ts';
+import { buildFestivalReminders } from './rules/festivalReminders.ts';
 import { createCommunityCenterSummary } from '../data/communityCenter.ts';
 import { BASIC_PLANTING_OPTIONS, calculateConservativeCropRoi } from '../data/crops.ts';
 import { findAvailableFishForDay } from '../data/fish.ts';
 import { normalizeItemId } from '../data/items.ts';
 import { getNextJojaProject } from '../data/joja.ts';
-import { NPC_GIFT_PREFERENCES, UNIVERSAL_GIFT_PREFERENCES, type NpcGiftPreferences } from '../data/npcs.ts';
 import { isBombItemId, isBombItemName, isSprinklerItemId, isSprinklerItemName } from '../data/preparationRules.ts';
 import { PROCESSING_RULES, type ProcessingIngredientKind, type ProcessingRule } from '../data/processingRules.ts';
 import { UPGRADE_RULES, type UpgradeRule } from '../data/upgradeRules.ts';
@@ -168,28 +168,6 @@ function estimateGoldValue(item: RecommendationItem): number {
   return item.estimate.goldMax ?? item.estimate.gold ?? item.estimate.goldMin ?? 0;
 }
 
-function buildFestivalReminders(input: PlannerInput): RecommendationItem[] {
-  const festival = FESTIVALS.find(
-    (item) => item.season === input.planDate.season && item.day === input.planDate.day,
-  );
-  if (!festival) {
-    return [];
-  }
-
-  return [{
-    id: `festival-${festival.id}`,
-    title: `今天有${festival.name}`,
-    category: 'reminder',
-    priority: 'must_do',
-      confidence: 'high',
-      reason: `今天是节日当天，可能影响商店、NPC日程和可安排行动。${festival.timeHint}。`,
-      evidence: [
-        { source: 'static_data', label: '节日', value: `${formatChineseMonthDay(input.planDate)} ${festival.name}` },
-      ],
-    uncertainty: ['节日参加与否由玩家决定，进入节日区域可能推进当天时间安排。'],
-  }];
-}
-
 function buildSeasonEndReminders(input: PlannerInput): RecommendationItem[] {
   if (input.planDate.day < 25 || input.planDate.day > 28) {
     return [];
@@ -267,115 +245,6 @@ function buildAnimalFeedReminders(input: PlannerInput): RecommendationItem[] {
     ],
     uncertainty: ['动物是否已放牧吃草、自动喂食器状态和当天是否已喂食仍需按游戏内确认。'],
   }];
-}
-
-function buildBirthdayReminders(input: PlannerInput): RecommendationItem[] {
-  if (input.manualCorrections.giftedToday) {
-    return [];
-  }
-
-  const birthday = BIRTHDAYS.find(
-    (item) => item.season === input.planDate.season && item.day === input.planDate.day,
-  );
-  if (!birthday) {
-    return [];
-  }
-
-  const preference = NPC_GIFT_PREFERENCES.find((item) => item.npc === birthday.npc);
-  const gift = preference ? findBestBirthdayGift(input.snapshot.inventory, preference) : undefined;
-
-  if (!gift) {
-    return [{
-      id: `birthday-${birthday.npc.toLowerCase()}`,
-      title: `今天是${birthday.npc}生日`,
-      category: 'reminder',
-      priority: 'must_do',
-      confidence: 'high',
-      reason: '生日送礼收益显著高于普通送礼，但当前库存未识别到已支持的可推荐礼物。',
-      evidence: [
-        { source: 'static_data', label: '生日', value: formatChineseMonthDay(input.planDate) },
-      ],
-      uncertainty: ['未确认游戏内今日是否已经送礼。'],
-    }];
-  }
-
-    return [{
-      id: `birthday-${birthday.npc.toLowerCase()}`,
-      title: `给${birthday.npc}送${formatItemName(gift, 'zh-CN')}`,
-      category: 'reminder',
-      priority: 'must_do',
-      confidence: 'high',
-      reason: '生日送礼收益显著高于普通送礼，且库存中存在当前可识别的高收益礼物。',
-      evidence: [
-      { source: 'static_data', label: '生日', value: formatChineseMonthDay(input.planDate) },
-      { source: 'save', label: '库存物品', value: `${formatItemName(gift, 'zh-CN')} x${gift.stack}${gift.sourceLabel ? `（${gift.sourceLabel}）` : ''}` },
-      ],
-      uncertainty: ['未确认游戏内今日是否已经送礼。'],
-    }];
-}
-
-function findBestBirthdayGift(
-  inventory: InventoryItem[],
-  preference: NpcGiftPreferences,
-): InventoryItem | undefined {
-  const rankedGifts = inventory
-    .map((item) => ({ item, rank: getPositiveGiftRank(item, preference) }))
-    .filter((entry): entry is { item: InventoryItem; rank: number } => entry.rank !== undefined)
-    .sort((left, right) => left.rank - right.rank);
-
-  return rankedGifts[0]?.item;
-}
-
-function getPositiveGiftRank(
-  item: InventoryItem,
-  preference: NpcGiftPreferences,
-): number | undefined {
-  if (isExcludedGift(item, preference)) {
-    return undefined;
-  }
-
-  if (matchesGift(item, preference.lovedItemIds, preference.lovedItemNames)) {
-    return 0;
-  }
-
-  if (matchesGift(item, UNIVERSAL_GIFT_PREFERENCES.lovedItemIds, UNIVERSAL_GIFT_PREFERENCES.lovedItemNames)) {
-    return 0;
-  }
-
-  if (matchesGift(item, preference.likedItemIds ?? [], preference.likedItemNames ?? [])) {
-    return 1;
-  }
-
-  if (matchesGift(item, UNIVERSAL_GIFT_PREFERENCES.likedItemIds ?? [], UNIVERSAL_GIFT_PREFERENCES.likedItemNames ?? [])) {
-    return 1;
-  }
-
-  if (matchesGift(item, preference.neutralItemIds ?? [], preference.neutralItemNames ?? [])) {
-    return 2;
-  }
-
-  if (matchesGift(item, UNIVERSAL_GIFT_PREFERENCES.neutralItemIds ?? [], UNIVERSAL_GIFT_PREFERENCES.neutralItemNames ?? [])) {
-    return 2;
-  }
-
-  return undefined;
-}
-
-function isExcludedGift(item: InventoryItem, preference: NpcGiftPreferences): boolean {
-  return matchesGift(item, preference.hatedItemIds ?? [], preference.hatedItemNames ?? [])
-    || matchesGift(item, preference.dislikedItemIds ?? [], preference.dislikedItemNames ?? [])
-    || matchesGift(item, preference.excludedLovedItemIds ?? [], preference.excludedLovedItemNames ?? [])
-    || matchesGift(item, preference.excludedLikedItemIds ?? [], preference.excludedLikedItemNames ?? [])
-    || matchesGift(item, preference.excludedNeutralItemIds ?? [], preference.excludedNeutralItemNames ?? []);
-}
-
-function matchesGift(
-  item: InventoryItem,
-  ids: Array<number | string>,
-  names: string[],
-): boolean {
-  const itemId = normalizeItemId(item.id);
-  return ids.some((id) => normalizeItemId(id) === itemId) || names.includes(item.name);
 }
 
 function buildHarvestActions(input: PlannerInput): RecommendationItem[] {

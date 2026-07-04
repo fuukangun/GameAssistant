@@ -309,6 +309,16 @@ test('reminds festival days as must-do reminders', () => {
   assert.equal(festival?.confidence, 'high');
 });
 
+test('reminds each day of a multi-day festival as a must-do reminder', () => {
+  const plan = generatePlan(input({
+    planDate: { year: 1, season: 'winter', day: 16, sourceSaveDate: { year: 1, season: 'winter', day: 16 } },
+  }));
+
+  const festival = plan.reminders.find((item) => item.id === 'festival-night-market');
+  assert.equal(festival?.priority, 'must_do');
+  assert.match(festival?.title ?? '', /夜市/);
+});
+
 test('reminds storm weather effects', () => {
   const plan = generatePlan(input({ selectedWeather: 'stormy' }));
 
@@ -415,9 +425,9 @@ test('localizes English seed names in Chinese planting evidence', () => {
 
 test('raises planting confidence when seed, empty plots, shop, and sprinkler coverage are parsed', () => {
   const plan = generatePlan(input({
-    planDate: { year: 1, season: 'spring', day: 24, sourceSaveDate: { year: 1, season: 'spring', day: 24 } },
+    planDate: { year: 1, season: 'spring', day: 17, sourceSaveDate: { year: 1, season: 'spring', day: 17 } },
     snapshot: baseSnapshot({
-      time: { year: 1, season: 'spring', day: 24 },
+      time: { year: 1, season: 'spring', day: 17 },
       wallet: { money: 1000 },
       crops: [],
       inventory: [

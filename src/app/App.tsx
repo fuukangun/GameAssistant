@@ -1,7 +1,7 @@
 import { type UIEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp, ChevronDown, ChevronRight, RefreshCw, Trash2 } from 'lucide-react';
 import { useStore } from 'zustand';
-import type { PlannerGoal, RecommendationItem, StardewSaveSnapshot, Weather } from '../shared/types.ts';
+import type { PlanDate, PlannerGoal, RecommendationItem, StardewSaveSnapshot, Weather } from '../shared/types.ts';
 import { getBackToTopButtonA11yProps, shouldShowBackToTop } from './backToTop.ts';
 import {
   groupCommunityCenterDeliverables,
@@ -26,6 +26,8 @@ import {
   createExplorationProgressSections,
 } from './explorationStatus.ts';
 import { type GiftOption } from './giftSuggestions.ts';
+import { CalendarPanel } from './CalendarPanel.tsx';
+import { getSeasonEventCount } from './calendarPanelModel.ts';
 import { createFriendshipPanelRows } from './friendshipPanelModel.ts';
 import { formatGoalLabel, formatPlanTitle, formatWeatherLabel, t } from './i18n.ts';
 import { groupInventoryBySource } from './inventoryGroups.ts';
@@ -604,6 +606,7 @@ export function App() {
         <RecommendationTabs
           activeTabId={activeRecommendationTab}
           onTabChange={handleRecommendationTabChange}
+          planDate={planDate}
           selectedWeather={selectedWeather}
           snapshot={snapshot}
           language={language}
@@ -634,6 +637,7 @@ function RecommendationTabs({
   activeTabId,
   language,
   onTabChange,
+  planDate,
   selectedWeather,
   snapshot,
   tabs,
@@ -641,6 +645,7 @@ function RecommendationTabs({
   activeTabId: RecommendationTabId;
   language: AppLanguage;
   onTabChange: (tabId: RecommendationTabId) => void;
+  planDate: PlanDate;
   selectedWeather: Weather;
   snapshot: StardewSaveSnapshot;
   tabs: ReturnType<typeof createRecommendationTabs>;
@@ -662,7 +667,7 @@ function RecommendationTabs({
             onClick={() => onTabChange(tab.id)}
           >
             <span>{tab.label}</span>
-            <strong>{getTabCount(tab.id, snapshot, tab.items ?? [])}</strong>
+            <strong>{getTabCount(tab.id, snapshot, planDate, tab.items ?? [])}</strong>
           </button>
         ))}
       </div>
@@ -676,6 +681,7 @@ function RecommendationTabs({
           <RecommendationList emptyText={activeTab.emptyText} items={activeTab.items ?? []} language={language} />
         ) : null}
         {activeTab.id === 'skills' ? <SkillPanel language={language} snapshot={snapshot} /> : null}
+        {activeTab.id === 'calendar' ? <CalendarPanel language={language} planDate={planDate} snapshot={snapshot} /> : null}
         {activeTab.id === 'friendship' ? <FriendshipPanel language={language} snapshot={snapshot} /> : null}
         {activeTab.id === 'exploration' ? <ExplorationPanel language={language} selectedWeather={selectedWeather} snapshot={snapshot} /> : null}
         {activeTab.id === 'inventory' ? <InventoryPanel language={language} snapshot={snapshot} /> : null}
@@ -684,12 +690,15 @@ function RecommendationTabs({
   );
 }
 
-function getTabCount(tabId: RecommendationTabId, snapshot: StardewSaveSnapshot, items: RecommendationItem[]): number {
+function getTabCount(tabId: RecommendationTabId, snapshot: StardewSaveSnapshot, planDate: PlanDate, items: RecommendationItem[]): number {
   if (tabId === 'skills') {
     return 5;
   }
   if (tabId === 'friendship') {
     return snapshot.relationships.length;
+  }
+  if (tabId === 'calendar') {
+    return getSeasonEventCount(planDate.season);
   }
   if (tabId === 'exploration') {
     return 7;

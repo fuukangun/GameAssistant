@@ -50,3 +50,24 @@ test('opens grouped recommendation action details in a recommendation-card modal
   assert.match(cssSource, /\.recommendation-actions-modal,[\s\S]*\.greenhouse-planting-modal\s*\{[\s\S]*width:\s*min\(1040px,\s*100%\);/);
   assert.match(cssSource, /\.recommendation-actions-grid,[\s\S]*\.greenhouse-planting-grid\s*\{[\s\S]*display:\s*grid;[\s\S]*overflow:\s*auto;[\s\S]*overscroll-behavior:\s*contain;/);
 });
+
+test('resets calendar selected day when the plan date model changes', () => {
+  const calendarSource = readFileSync(new URL('./calendar/CalendarPanel.tsx', import.meta.url), 'utf8');
+
+  assert.match(calendarSource, /import \{ useEffect, useMemo, useState \} from 'react';/);
+  assert.match(calendarSource, /useEffect\(\(\) => \{\s*setSelectedDay\(model\.selectedDay\);\s*\}, \[model\]\);/);
+});
+
+test('uses a cake emoji instead of a letter for birthday calendar badges', () => {
+  const badgeSource = readFileSync(new URL('./calendar/CalendarEventBadge.tsx', import.meta.url), 'utf8');
+
+  assert.match(badgeSource, /event\.type === 'birthday' \? '🎂'/);
+  assert.doesNotMatch(badgeSource, /event\.type === 'birthday' \? 'B'/);
+});
+
+test('uses emoji icons instead of letters for festival and special calendar badges', () => {
+  const badgeSource = readFileSync(new URL('./calendar/CalendarEventBadge.tsx', import.meta.url), 'utf8');
+
+  assert.match(badgeSource, /event\.type === 'special' \? '⭐' : '🎉'/);
+  assert.doesNotMatch(badgeSource, /event\.type === 'special' \? 'S' : 'F'/);
+});

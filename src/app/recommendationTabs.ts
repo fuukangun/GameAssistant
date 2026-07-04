@@ -5,6 +5,7 @@ import { RECOMMENDATION_TABS_LABELS } from '../stardew/data/recommendationTabsLa
 export type RecommendationTabId =
   | 'reminders'
   | 'actions'
+  | 'calendar'
   | 'skills'
   | 'friendship'
   | 'exploration'
@@ -37,6 +38,11 @@ export function createRecommendationTabs(input: {
       label: labels.actions,
       emptyText: labels.actionsEmpty,
       items: input.actions,
+    },
+    {
+      id: 'calendar',
+      label: labels.calendar,
+      emptyText: labels.calendarEmpty,
     },
     {
       id: 'skills',

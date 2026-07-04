@@ -1,9 +1,124 @@
 [
   {
+    "id": "egg-festival",
+    "name": "复活节",
+    "nameEn": "Egg Festival",
+    "season": "spring",
+    "day": 13,
+    "timeHint": "上午 9:00 至下午 2:00 前往鹈鹕镇广场",
+    "timeHintEn": "Enter Pelican Town between 9:00 AM and 2:00 PM",
+    "planningTips": ["预留金币购买草莓种子", "提前完成农场浇水和收获后再进城"],
+    "planningTipsEn": ["Reserve gold for strawberry seeds", "Finish watering and harvesting before entering town"],
+    "relatedData": {
+      "shopItems": [745],
+      "budgetSuggestion": 1000
+    }
+  },
+  {
+    "id": "flower-dance",
+    "name": "花舞节",
+    "nameEn": "Flower Dance",
+    "season": "spring",
+    "day": 24,
+    "timeHint": "上午 9:00 至下午 2:00 从巫师塔南侧进入煤矿森林",
+    "timeHintEn": "Enter Cindersap Forest south of the Wizard's Tower between 9:00 AM and 2:00 PM",
+    "planningTips": ["想邀请舞伴需要目标 NPC 至少 4 心", "节日前优先对目标 NPC 对话和送礼"],
+    "planningTipsEn": ["A dance partner needs at least 4 hearts", "Talk to and gift the target NPC before the festival"],
+    "relatedData": {
+      "requiredHearts": 4
+    }
+  },
+  {
+    "id": "luau",
+    "name": "夏威夷宴会",
+    "nameEn": "Luau",
+    "season": "summer",
+    "day": 11,
+    "timeHint": "上午 9:00 至下午 2:00 前往海滩",
+    "timeHintEn": "Enter the Beach between 9:00 AM and 2:00 PM",
+    "planningTips": ["准备高品质食材加入汤品", "当天先处理农场事务再前往海滩"],
+    "planningTipsEn": ["Prepare a high-quality ingredient for the soup", "Handle farm chores before going to the Beach"],
+    "relatedData": {
+      "itemCategories": ["food", "crop"]
+    }
+  },
+  {
     "id": "dance-of-moonlight-jellies",
     "name": "月光水母之舞",
+    "nameEn": "Dance of the Moonlight Jellies",
     "season": "summer",
     "day": 28,
-    "timeHint": "晚上 10:00 后前往海滩"
+    "timeHint": "晚上 10:00 后前往海滩",
+    "timeHintEn": "Enter the Beach after 10:00 PM",
+    "planningTips": ["这是夏季最后一天，确认夏季作物已收获", "提前安排第二天秋季开局物资"],
+    "planningTipsEn": ["This is the last day of summer; harvest summer crops first", "Prepare supplies for the first day of fall"],
+    "relatedData": {}
+  },
+  {
+    "id": "stardew-valley-fair",
+    "name": "星露谷展览会",
+    "nameEn": "Stardew Valley Fair",
+    "season": "fall",
+    "day": 16,
+    "timeHint": "上午 9:00 至下午 3:00 前往鹈鹕镇广场",
+    "timeHintEn": "Enter Pelican Town between 9:00 AM and 3:00 PM",
+    "planningTips": ["准备 9 格展品", "尽量覆盖多个类别并选择高品质物品"],
+    "planningTipsEn": ["Prepare 9 grange display items", "Cover multiple categories and prefer high-quality items"],
+    "relatedData": {
+      "itemCategories": ["crop", "fish", "artisan", "mineral", "cooking", "animal_product"]
+    }
+  },
+  {
+    "id": "spirits-eve",
+    "name": "万灵节",
+    "nameEn": "Spirit's Eve",
+    "season": "fall",
+    "day": 27,
+    "timeHint": "晚上 10:00 后前往鹈鹕镇",
+    "timeHintEn": "Enter Pelican Town after 10:00 PM",
+    "planningTips": ["预留夜间时间探索迷宫", "可获取金南瓜作为高价值奖励"],
+    "planningTipsEn": ["Reserve the evening for the maze", "The Golden Pumpkin is a valuable reward"],
+    "relatedData": {}
+  },
+  {
+    "id": "festival-of-ice",
+    "name": "冰钓节",
+    "nameEn": "Festival of Ice",
+    "season": "winter",
+    "day": 8,
+    "timeHint": "上午 9:00 至下午 2:00 前往煤矿森林",
+    "timeHintEn": "Enter Cindersap Forest between 9:00 AM and 2:00 PM",
+    "planningTips": ["确认已拥有鱼竿", "留出时间参加冰钓比赛"],
+    "planningTipsEn": ["Make sure you have a fishing rod", "Leave time for the ice fishing contest"],
+    "relatedData": {
+      "requiresFishingRod": true
+    }
+  },
+  {
+    "id": "night-market",
+    "name": "夜市",
+    "nameEn": "Night Market",
+    "season": "winter",
+    "day": 15,
+    "endDay": 17,
+    "timeHint": "下午 5:00 至凌晨 2:00 前往海滩",
+    "timeHintEn": "Visit the Beach from 5:00 PM to 2:00 AM",
+    "planningTips": ["连续 3 天开放，关注稀有商品", "可安排深海钓鱼和美人鱼船事件"],
+    "planningTipsEn": ["Open for 3 consecutive nights with rare shops", "Plan for deep-sea fishing and the Mermaid Boat"],
+    "relatedData": {}
+  },
+  {
+    "id": "feast-of-the-winter-star",
+    "name": "冬日星盛宴",
+    "nameEn": "Feast of the Winter Star",
+    "season": "winter",
+    "day": 25,
+    "timeHint": "上午 9:00 至下午 2:00 前往鹈鹕镇",
+    "timeHintEn": "Enter Pelican Town between 9:00 AM and 2:00 PM",
+    "planningTips": ["准备神秘朋友礼物", "这次送礼不占普通 NPC 每周送礼上限"],
+    "planningTipsEn": ["Prepare a gift for your secret friend", "This gift does not use the normal weekly NPC gift limit"],
+    "relatedData": {
+      "specialGift": "winter_star"
+    }
   }
 ]
